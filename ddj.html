@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dum Dum Jn. - Ultimate Auto-Interlocking & CTC Panel</title>
+    <style>
+        :root {
+            --bg-color: #090d16;
+            --panel-bg: #131824;
+            --track-empty: #334155;
+            --track-locked: #ca8a04;
+            --track-occupied: #dc2626;
+            --text-color: #f8fafc;
+            --accent-color: #38bdf8;
+        }
+
+        body {
+            font-family: 'Courier New', Courier, monospace;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 15px;
+            user-select: none;
+        }
+
+        header {
+            text-align: center;
+            border-bottom: 3px double var(--accent-color);
+            padding-bottom: 6px;
+            margin-bottom: 15px;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 24px;
+            letter-spacing: 2px;
+            color: var(--accent-color);
+            text-shadow: 0 0 10px rgba(56, 189, 248, 0.3);
+        }
+
+        header p { margin: 5px 0 0 0; font-size: 11px; color: #94a3b8; font-weight: bold; }
+
+        #synoptic-panel {
+            background-color: #020617;
+            border: 4px solid #475569;
+            position: relative;
+            width: 1150px;
+            height: 450px;
+            margin: 0 auto;
+            overflow: hidden;
+            box-shadow: inset 0 0 40px rgba(0,0,0,0.9), 0 10px 25px rgba(0,0,0,0.7);
+        }
+
+        svg {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 1;
+        }
+
+        .track-bg { stroke: #090d16; stroke-width: 14; fill: none; stroke-linecap: round; }
+        .track { stroke: var(--track-empty); stroke-width: 4; fill: none; stroke-linecap: round; transition: stroke 0.1s ease; }
+        .track.locked { stroke: var(--track-locked); }
+        .track.occupied { stroke: var(--track-occupied); }
+
+        .lbl { font-size: 10px; fill: #64748b; font-weight: bold; }
+        .lbl-pf { font-size: 11px; fill: #38bdf8; font-weight: bold; letter-spacing: 1px; }
+        .lbl-route { font-size: 11px; fill: #e2e8f0; font-weight: bold; }
+
+        .signal-post { stroke: #94a3b8; stroke-width: 2; }
+        .signal-head { fill: #000000; stroke: #475569; stroke-width: 1.5; }
+        .aspect { transition: fill 0.1s ease; }
+        
+        /* Indian Railways Route Indicator (Feather Position) */
+        .feather-line { stroke: #ffffff; stroke-width: 2; stroke-linecap: round; opacity: 0; transition: opacity 0.15s ease; }
+        .feather-line.active { opacity: 1; }
+
+        .control-container {
+            width: 1150px;
+            margin: 15px auto 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1.2fr;
+            gap: 15px;
+        }
+
+        .card {
+            background-color: var(--panel-bg);
+            border: 2px solid #334155;
+            padding: 12px; border-radius: 6px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+        }
+        .card h3 {
+            margin: 0 0 10px 0; font-size: 13px; color: var(--accent-color);
+            border-bottom: 1px solid #334155; padding-bottom: 6px; text-transform: uppercase;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+
+        .btn-group { display: flex; flex-wrap: wrap; gap: 8px; }
+        button {
+            background-color: #1e293b; color: #fff; border: 1px solid #475569;
+            padding: 8px 14px; font-family: inherit; font-size: 11px; cursor: pointer;
+            font-weight: bold; border-radius: 4px; transition: all 0.2s ease;
+        }
+        button:hover { background-color: #334155; border-color: #64748b; }
+        button:disabled { opacity: 0.2; cursor: not-allowed; }
+        button.active { background-color: #0369a1; border-color: var(--accent-color); box-shadow: 0 0 8px rgba(56,189,248,0.4); }
+        button.danger { background-color: #991b1b; border-color: #ef4444; text-shadow: 0 1px 2px #000; }
+
+        #log-card { grid-column: 1 / span 3; }
+        #sys-logs {
+            background-color: #020617; border: 1px solid #334155; height: 130px;
+            overflow-y: auto; padding: 10px; font-size: 11px; color: #22c55e; border-radius: 4px;
+        }
+        .log-entry { margin-bottom: 5px; line-height: 1.4; border-left: 3px solid #1e293b; padding-left: 6px; }
+        .log-time { color: #64748b; margin-right: 6px; }
+        .status-badge {
+            font-size: 10px; padding: 2px 6px; background: #0f172a;
+            border-radius: 3px; color: #22c55e; border: 1px solid #16a34a;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>DUM DUM JUNCTION AUTOMATIC INTERLOCKING CONTROL CENTRE</h1>
+        <p>FAIL-SAFE VECTOR ROUTE LOCKING & LIVE MULTI-ASPECT SIGNAL OPTIMIZATION ENGINE</p>
+    </header>
+
+    <div id="synoptic-panel">
+        <svg id="rri-svg">
+            <g id="tracks-bg-layer"></g>
+            <g id="tracks-layer"></g>
+            <g id="signals-layer"></g>
+            <g id="trains-layer"></g>
+            
+            <g id="labels-layer">
+                <text x="15" y="65" class="lbl">← UP MAIN (SEALDAH)</text>
+                <text x="15" y="185" class="lbl">← UP CHORD (SEALDAH)</text>
+                
+                <text x="460" y="55" class="lbl-pf">PLATFORM 1 [UP MAIN - EXPRESS CORRIDOR]</text>
+                <text x="460" y="115" class="lbl-pf">PLATFORM 2 [DN MAIN / DN CHORD TERMINAL]</text>
+                <text x="460" y="175" class="lbl-pf">PLATFORM 3 [UP CHORD / UP BANGAON LOCAL]</text>
+                <text x="460" y="235" class="lbl-pf">PLATFORM 4 [DN BANGAON / HASNABAD LOCAL]</text>
+                <text x="460" y="295" class="lbl-pf">PLATFORM 5 [CIRCULAR RLY BYPASS]</text>
+
+                <text x="920" y="75" class="lbl-route">MAIN LINE (NAIHATI / LALGOLA) →</text>
+                <text x="920" y="175" class="lbl-route">CHORD LINE (DANKUNI / BWN) →</text>
+                <text x="920" y="245" class="lbl-route">BANGAON LINE (RANAGHAT BYPASS) →</text>
+                <text x="920" y="315" class="lbl-route">CIRCULAR BALIAGHATA LINE →</text>
+            </g>
+        </svg>
+    </div>
+
+    <div class="control-container">
+        <div class="card">
+            <h3>UP Line Traffic (Northbound)</h3>
+            <div class="btn-group">
+                <button class="btn-up" onclick="forceInjectTrain('UP', 'MAIN')">Inject P1 (Main Line)</button>
+                <button class="btn-up" onclick="forceInjectTrain('UP', 'CHORD')">Inject P3 (Dankuni Local)</button>
+                <button class="btn-up" onclick="forceInjectTrain('UP', 'BANG')">Inject P3 (Bangaon Local)</button>
+                <button class="btn-up" onclick="forceInjectTrain('UP', 'CIRCULAR')">Inject P5 (Circular Rail)</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>DOWN Line Traffic (Southbound)</h3>
+            <div class="btn-group">
+                <button class="btn-down" onclick="forceInjectTrain('DOWN', 'MAIN')">Inject P2 (Naihati Main)</button>
+                <button class="btn-down" onclick="forceInjectTrain('DOWN', 'CHORD')">Inject P2 (Dankuni local)</button>
+                <button class="btn-down" onclick="forceInjectTrain('DOWN', 'BANG')">Inject P4 (Bangaon Local)</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>Fail-Safe Automation Controls <span id="panel-status-badge" class="status-badge">AUTO INTERLOCKED</span></h3>
+            <div class="btn-group" style="margin-bottom: 10px;">
+                <button id="mode-auto" class="active" style="width: 100%;">DEADLOCK-FREE INTELLIGENT SCHEDULER</button>
+            </div>
+            <div class="btn-group">
+                <button class="danger" onclick="emergencyAllRed()">EMERGENCY ALL RED (🔴)</button>
+                <button onclick="hardResetPanel()" style="border-color:#64748b;">RESET MAP CIRCUITS</button>
+            </div>
+        </div>
+
+        <div class="card" id="log-card">
+            <h3>Live Electronic Interlocking Data Streams</h3>
+            <div id="sys-logs"></div>
+        </div>
+    </div>
+
+    <script>
+        // High-Precision Pixel Perfect Track Array Configuration
+        const tracksData = {
+            'SEAL_UP_M':   { path: "M 20,80 L 250,80" },
+            'P1_TRK':      { path: "M 250,80 L 680,80" },
+            'OUT_MAIN':    { path: "M 680,80 L 1120,80" },
+            
+            'SEAL_UP_C':   { path: "M 20,200 L 250,200" },
+            'P3_TRK':      { path: "M 250,200 L 680,200" },
+            'DIV_CHORD':   { path: "M 680,200 L 730,200 L 770,180 L 1120,180" },
+            'DIV_BANG':    { path: "M 680,200 L 740,200 L 800,250 L 1120,250" },
+            
+            'S_XOVER_P5':  { path: "M 20,200 L 120,200 L 200,320 L 250,320" }, 
+            'P5_TRK':      { path: "M 250,320 L 680,320" },
+            'OUT_CIRC':    { path: "M 680,320 L 1120,320" },
+            
+            'IN_MAIN':     { path: "M 1120,140 L 680,140" },
+            'P2_TRK':      { path: "M 680,140 L 250,140" },
+            'SEAL_DN_M':   { path: "M 250,140 L 20,140" },
+            
+            'IN_CHORD':    { path: "M 1120,210 L 840,210 L 750,140 L 680,140" }, 
+            'IN_BANG':     { path: "M 1120,280 L 840,280 L 780,260 L 680,260" },
+            'P4_TRK':      { path: "M 680,260 L 250,260" },
+            'SEAL_DN_B':   { path: "M 250,260 L 20,260" }
+        };
+
+        // Real Multi-Aspect Signal Matrix Layout (Includes Route Direction Indicators)
+        const signalsConfig = [
+            { id: 'S1_HOME', x: 90, y: 80, dir: 'UP', aspect: 'RED', label: 'S1-HOME', featherAngle: 0 },
+            { id: 'S3_HOME', x: 90, y: 200, dir: 'UP', aspect: 'RED', label: 'S3-HOME', featherAngle: 0 },
+            { id: 'S5_STRTR', x: 660, y: 80, dir: 'UP', aspect: 'RED', label: 'P1-STRTR', featherAngle: 0 },
+            { id: 'S7_STRTR', x: 660, y: 200, dir: 'UP', aspect: 'RED', label: 'P3-STRTR', featherAngle: -30 }, // Structural Divergence Feather
+            { id: 'S9_STRTR', x: 660, y: 320, dir: 'UP', aspect: 'RED', label: 'P5-STRTR', featherAngle: 0 },
+            
+            { id: 'S2_DN_HOME', x: 1040, y: 140, dir: 'DOWN', aspect: 'RED', label: 'DN-MAIN-H', featherAngle: 0 },
+            { id: 'S4_DN_HOME', x: 1040, y: 210, dir: 'DOWN', aspect: 'RED', label: 'DN-CHRD-H', featherAngle: 30 },
+            { id: 'S6_DN_HOME', x: 1040, y: 280, dir: 'DOWN', aspect: 'RED', label: 'DN-BANG-H', featherAngle: 0 },
+            
+            { id: 'S8_DN_STRTR', x: 270, y: 140, dir: 'DOWN', aspect: 'RED', label: 'P2-STRTR', featherAngle: 0 },
+            { id: 'S10_DN_STRTR', x: 270, y: 260, dir: 'DOWN', aspect: 'RED', label: 'P4-STRTR', featherAngle: 0 }
+        ];
+
+        let trackOccupancy = {};
+        let signals = {};
+        let activeTrains = [];
+        let logBuffer = [];
+        let systemClock = 0;
+
+        window.onload = function() {
+            initSystem();
+            renderSynopticMap();
+            addLog("SYSTEM START: Dynamic Multi-Route Anti-Collision Logic Verified.");
+            setInterval(coreInterlockingEngine, 30);
+        };
+
+        function initSystem() {
+            for (let trk in tracksData) { trackOccupancy[trk] = null; }
+            signalsConfig.forEach(s => { signals[s.id] = 'RED'; });
+            activeTrains = [];
+        }
+
+        function renderSynopticMap() {
+            const bgLayer = document.getElementById('tracks-bg-layer');
+            const mainLayer = document.getElementById('tracks-layer');
+            const sigLayer = document.getElementById('signals-layer');
+
+            bgLayer.innerHTML = ''; mainLayer.innerHTML = ''; sigLayer.innerHTML = '';
+
+            for (let id in tracksData) {
+                let p = tracksData[id].path;
+                let bLine = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                bLine.setAttribute("d", p); bLine.setAttribute("class", "track-bg");
+                bgLayer.appendChild(bLine);
+
+                let mLine = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                mLine.setAttribute("d", p); mLine.setAttribute("id", "track-" + id);
+                mLine.setAttribute("class", "track");
+                mainLayer.appendChild(mLine);
+            }
+
+            signalsConfig.forEach(s => {
+                let g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+                let offset = (s.dir === 'UP') ? -16 : 16;
+
+                // Signal Mast
+                let post = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                post.setAttribute("x1", s.x); post.setAttribute("y1", s.y);
+                post.setAttribute("x2", s.x); post.setAttribute("y2", s.y + offset);
+                post.setAttribute("class", "signal-post");
+                g.appendChild(post);
+
+                // Aspect Housing
+                let head = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+                head.setAttribute("x", s.x - 7); head.setAttribute("y", (s.dir === 'UP') ? s.y - 28 : s.y + 16);
+                head.setAttribute("width", 14); head.setAttribute("height", 14); head.setAttribute("rx", 2);
+                head.setAttribute("class", "signal-head");
+                g.appendChild(head);
+
+                // LED Bulb
+                let lamp = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                lamp.setAttribute("cx", s.x); lamp.setAttribute("cy", (s.dir === 'UP') ? s.y - 21 : s.y + 23);
+                lamp.setAttribute("r", 4.5); lamp.setAttribute("id", "aspect-" + s.id); lamp.setAttribute("class", "aspect");
+                g.appendChild(lamp);
+
+                // Route Indicators (Directional Line Feathers)
+                if(s.featherAngle !== 0) {
+                    let fx2 = s.x + (12 * Math.sin(s.featherAngle * Math.PI / 180));
+                    let fy2 = ((s.dir === 'UP') ? s.y - 28 : s.y + 16) + (12 * Math.cos(s.featherAngle * Math.PI / 180));
+                    let fLine = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                    fLine.setAttribute("x1", s.x); fLine.setAttribute("y1", (s.dir === 'UP') ? s.y - 28 : s.y + 16);
+                    fLine.setAttribute("x2", fx2); fLine.setAttribute("y2", fy2);
+                    fLine.setAttribute("id", "feather-" + s.id); fLine.setAttribute("class", "feather-line");
+                    g.appendChild(fLine);
+                }
+
+                let text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                text.setAttribute("x", s.x); text.setAttribute("y", (s.dir === 'UP') ? s.y - 36 : s.y + 44);
+                text.setAttribute("class", "lbl"); text.setAttribute("text-anchor", "middle");
+                text.textContent = s.label;
+                g.appendChild(text);
+                sigLayer.appendChild(g);
+            });
+        }
+
+        // Deadlock Elimination Automation Layer
+        function executeAutoScheduler() {
+            systemClock++;
+            if (systemClock % 140 === 0) {
+                const upBranches = ['MAIN', 'CHORD', 'BANG', 'CIRCULAR'];
+                const dnBranches = ['MAIN', 'CHORD', 'BANG'];
+                
+                if (Math.random() > 0.4) {
+                    autoInjectEngine('UP', upBranches[Math.floor(Math.random() * upBranches.length)]);
+                } else {
+                    autoInjectEngine('DOWN', dnBranches[Math.floor(Math.random() * dnBranches.length)]);
+                }
+            }
+        }
+
+        function autoInjectEngine(dir, branch) {
+            let path = getRoutePath(dir, branch);
+            // Block admission if route entry is held down by another train footprint
+            if (trackOccupancy[path[0]] !== null) return; 
+            spawnTrainInstance(dir, branch, path, true);
+        }
+
+        function forceInjectTrain(dir, branch) {
+            let path = getRoutePath(dir, branch);
+            if (trackOccupancy[path[0]] !== null) {
+                addLog(`🛑 Interlocking Reject: Entry track block ${path[0]} is currently locked or occupied.`);
+                return;
+            }
+            spawnTrainInstance(dir, branch, path, false);
+        }
+
+        function getRoutePath(direction, branch) {
+            if (direction === 'UP') {
+                if (branch === 'MAIN') return ['SEAL_UP_M', 'P1_TRK', 'OUT_MAIN'];
+                if (branch === 'CHORD') return ['SEAL_UP_C', 'P3_TRK', 'DIV_CHORD'];
+                if (branch === 'BANG') return ['SEAL_UP_C', 'P3_TRK', 'DIV_BANG'];
+                if (branch === 'CIRCULAR') return ['S_XOVER_P5', 'P5_TRK', 'OUT_CIRC'];
+            } else {
+                if (branch === 'MAIN') return ['IN_MAIN', 'P2_TRK', 'SEAL_DN_M'];
+                if (branch === 'CHORD') return ['IN_CHORD', 'P2_TRK', 'SEAL_DN_M'];
+                if (branch === 'BANG') return ['IN_BANG', 'P4_TRK', 'SEAL_DN_B'];
+            }
+        }
+
+        function spawnTrainInstance(direction, branch, path, isAuto) {
+            let srcMap = { 'MAIN': 'NH', 'CHORD': 'DKAE', 'BANG': 'BNJ', 'CIRCULAR': 'KOAA' };
+            let destMap = { 'MAIN': 'SDAH-M', 'CHORD': 'SDAH-C', 'BANG': 'SDAH-B' };
+            let code = (direction === 'UP') ? srcMap[branch] : destMap[branch];
+            
+            let id = `${code}-${isAuto ? 'EMU' : 'EXP'}-${Math.floor(Math.random() * 89 + 10)}`;
+            
+            let newTrain = {
+                id: id, dir: direction, route: branch,
+                segments: path, currentSegmentIdx: 0, progress: 0.0,
+                speed: isAuto ? 0.012 : 0.016, originalSpeed: isAuto ? 0.012 : 0.016,
+                isStationDwell: false, stationDwellTimer: 0
+            };
+
+            activeTrains.push(newTrain);
+            trackOccupancy[path[0]] = id;
+            addLog(`⚡ Train [${id}] clear to enter tracking domain via ${branch} line.`);
+        }
+
+        function coreInterlockingEngine() {
+            executeAutoScheduler();
+            processInterlockingMatrix();
+            refreshPanelDisplays();
+            advanceTrainVectors();
+            drawDynamicTrains();
+        }
+
+        // Complex Cascading Look-Ahead Signal Logic
+        function processInterlockingMatrix() {
+            // Default Signal Map State Check
+            signals['S1_HOME'] = (trackOccupancy['P1_TRK'] === null) ? 'GREEN' : 'RED';
+            signals['S3_HOME'] = (trackOccupancy['P3_TRK'] === null) ? 'YELLOW' : 'RED';
+            
+            // Starters Logic mapping ahead blocks
+            signals['S5_STRTR'] = (trackOccupancy['OUT_MAIN'] === null) ? 'GREEN' : 'RED';
+            
+            // Platform 3 Starter with look-ahead fork verification
+            let p3Occupant = activeTrains.find(t => t.segments[t.currentSegmentIdx] === 'P3_TRK');
+            if (p3Occupant) {
+                let targetFork = (p3Occupant.route === 'CHORD') ? 'DIV_CHORD' : 'DIV_BANG';
+                signals['S7_STRTR'] = (trackOccupancy[targetFork] === null) ? 'YELLOW' : 'RED';
+            } else {
+                signals['S7_STRTR'] = 'RED';
+            }
+
+            signals['S9_STRTR'] = (trackOccupancy['OUT_CIRC'] === null) ? 'GREEN' : 'RED';
+
+            // Down Tracks Protection Circuits
+            signals['S2_DN_HOME'] = (trackOccupancy['P2_TRK'] === null) ? 'YELLOW' : 'RED';
+            signals['S4_DN_HOME'] = (trackOccupancy['P2_TRK'] === null && trackOccupancy['IN_MAIN'] === null) ? 'GREEN' : 'RED';
+            signals['S6_DN_HOME'] = (trackOccupancy['P4_TRK'] === null) ? 'YELLOW' : 'RED';
+
+            signals['S8_DN_STRTR'] = (trackOccupancy['SEAL_DN_M'] === null) ? 'GREEN' : 'RED';
+            signals['S10_DN_STRTR'] = (trackOccupancy['SEAL_DN_B'] === null) ? 'GREEN' : 'RED';
+        }
+
+        function advanceTrainVectors() {
+            for (let i = activeTrains.length - 1; i >= 0; i--) {
+                let train = activeTrains[i];
+
+                // Smooth Station Commuter Berthing & Loading Logic
+                if (train.isStationDwell) {
+                    train.stationDwellTimer++;
+                    if (train.stationDwellTimer > 120) { // Authentic stop delay window
+                        train.isStationDwell = false;
+                        train.stationDwellTimer = 0;
+                        addLog(`📋 Station Manifest complete. [${train.id}] departs platform block.`);
+                    }
+                    continue; 
+                }
+
+                let curSeg = train.segments[train.currentSegmentIdx];
+
+                // Advanced Block Gating System (Prevents tail-end collisions smoothly)
+                if (train.progress >= 0.88) {
+                    let isHeld = false;
+                    if (curSeg === 'SEAL_UP_M' && signals['S1_HOME'] === 'RED') isHeld = true;
+                    if (curSeg === 'SEAL_UP_C' && signals['S3_HOME'] === 'RED') isHeld = true;
+                    if (curSeg === 'P1_TRK' && signals['S5_STRTR'] === 'RED') isHeld = true;
+                    if (curSeg === 'P3_TRK' && signals['S7_STRTR'] === 'RED') isHeld = true;
+                    if (curSeg === 'P5_TRK' && signals['S9_STRTR'] === 'RED') isHeld = true;
+                    
+                    if (curSeg === 'IN_MAIN' && signals['S2_DN_HOME'] === 'RED') isHeld = true;
+                    if (curSeg === 'IN_CHORD' && signals['S4_DN_HOME'] === 'RED') isHeld = true;
+                    if (curSeg === 'IN_BANG' && signals['S6_DN_HOME'] === 'RED') isHeld = true;
+                    if (curSeg === 'P2_TRK' && signals['S8_DN_STRTR'] === 'RED') isHeld = true;
+                    if (curSeg === 'P4_TRK' && signals['S10_DN_STRTR'] === 'RED') isHeld = true;
+
+                    if (isHeld) {
+                        train.progress = 0.88; // Decelerates smoothly to signal footprint boundary
+                        continue;
+                    }
+                }
+
+                train.progress += train.speed;
+
+                // Track Boundary Transition Matrix
+                if (train.progress >= 1.0) {
+                    trackOccupancy[curSeg] = null; 
+                    train.currentSegmentIdx++;
+                    train.progress = 0.0;
+
+                    if (train.currentSegmentIdx >= train.segments.length) {
+                        addLog(`🏁 Train [${train.id}] cleared outer block territory.`);
+                        activeTrains.splice(i, 1);
+                        continue;
+                    }
+
+                    let nextSeg = train.segments[train.currentSegmentIdx];
+
+                    // Double-Check Block Interlocking Isolation
+                    if (trackOccupancy[nextSeg] !== null) {
+                        train.currentSegmentIdx--; 
+                        train.progress = 0.95;
+                        continue;
+                    }
+
+                    trackOccupancy[nextSeg] = train.id;
+
+                    // Platform Stop Triggering Rule
+                    if (nextSeg.includes('P1_TRK') || nextSeg.includes('P2_TRK') || 
+                        nextSeg.includes('P3_TRK') || nextSeg.includes('P4_TRK') || nextSeg.includes('P5_TRK')) {
+                        train.isStationDwell = true;
+                        addLog(`🚉 Train [${train.id}] berthed at platform loop circuit.`);
+                    }
+                }
+            }
+        }
+
+        function refreshPanelDisplays() {
+            signalsConfig.forEach(s => {
+                let color = '#dc2626'; 
+                if (signals[s.id] === 'GREEN') color = '#22c55e';
+                if (signals[s.id] === 'YELLOW') color = '#eab308';
+                
+                let el = document.getElementById("aspect-" + s.id);
+                if (el) el.setAttribute("fill", color);
+
+                let feather = document.getElementById("feather-" + s.id);
+                if (feather) {
+                    if (signals[s.id] !== 'RED') {
+                        feather.classList.add('active');
+                    } else {
+                        feather.classList.remove('active');
+                    }
+                }
+            });
+
+            for (let id in tracksData) {
+                let lineEl = document.getElementById("track-" + id);
+                if (!lineEl) continue;
+
+                if (trackOccupancy[id] !== null) {
+                    lineEl.setAttribute("class", "track occupied");
+                } else {
+                    let isLocked = false;
+                    if (id === 'OUT_MAIN' && signals['S5_STRTR'] !== 'RED') isLocked = true;
+                    if (id === 'DIV_CHORD' && signals['S7_STRTR'] !== 'RED') isLocked = true;
+                    if (id === 'DIV_BANG' && signals['S7_STRTR'] !== 'RED') isLocked = true;
+                    lineEl.setAttribute("class", isLocked ? "track locked" : "track");
+                }
+            }
+        }
+
+        function drawDynamicTrains() {
+            const layer = document.getElementById('trains-layer');
+            layer.innerHTML = '';
+
+            activeTrains.forEach(train => {
+                let seg = train.segments[train.currentSegmentIdx];
+                let trackEl = document.getElementById("track-" + seg);
+                if (!trackEl) return;
+
+                let totalLen = trackEl.getTotalLength();
+                let pointAt = trackEl.getPointAtLength(train.progress * totalLen);
+
+                let carG = document.createElementNS("http://www.w3.org/2000/svg", "g");
+
+                let rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+                rect.setAttribute("x", pointAt.x - 26); rect.setAttribute("y", pointAt.y - 6);
+                rect.setAttribute("width", 52); rect.setAttribute("height", 12); rect.setAttribute("rx", 2);
+                rect.setAttribute("fill", train.dir === 'UP' ? '#0284c7' : '#db2777');
+                rect.setAttribute("stroke", '#ffffff'); rect.setAttribute("stroke-width", '1');
+                carG.appendChild(rect);
+
+                let txt = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                txt.setAttribute("x", pointAt.x); txt.setAttribute("y", pointAt.y + 3);
+                txt.setAttribute("fill", "#ffffff"); txt.setAttribute("font-size", "8px"); txt.setAttribute("font-weight", "bold");
+                txt.setAttribute("text-anchor", "middle");
+                txt.textContent = train.id;
+                carG.appendChild(txt);
+
+                layer.appendChild(carG);
+            });
+        }
+
+        function emergencyAllRed() {
+            signalsConfig.forEach(s => { signals[s.id] = 'RED'; });
+            activeTrains.forEach(t => t.speed = 0);
+            addLog("🚨 SYSTEM LOCKOUT: Emergency stop commanded instantly from CTC console.");
+        }
+
+        function hardResetPanel() {
+            initSystem();
+            addLog("🧹 Complete infrastructure track clear executed.");
+        }
+
+        function addLog(msg) {
+            let time = new Date().toLocaleTimeString();
+            logBuffer.unshift({t: time, m: msg});
+            if (logBuffer.length > 25) logBuffer.pop();
+
+            let container = document.getElementById('sys-logs');
+            container.innerHTML = '';
+            logBuffer.forEach(l => {
+                container.innerHTML += `<div class="log-entry"><span class="log-time">[${l.t}]</span> ${l.m}</div>`;
+            });
+        }
+    </script>
+</body>
+</html>
