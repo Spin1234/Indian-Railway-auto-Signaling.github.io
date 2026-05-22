@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sealdah Division Professional Auto Signaling Simulation</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background-color: #121620;
+            color: #e2e8f0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+        h1, h2 {
+            margin: 0 0 10px 0;
+            font-weight: 600;
+        }
+        h1 { color: #f1f5f9; font-size: 24px; }
+        h2 { color: #94a3b8; font-size: 16px; margin-bottom: 20px;}
+        
+        .container {
+            max-width: 1300px;
+            margin: 0 auto;
+        }
+        
+        .canvas-container {
+            position: relative;
+            background: #1e293b;
+            border-radius: 8px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            border: 1px solid #334155;
+        }
+        
+        canvas {
+            display: block;
+            width: 100%;
+            height: auto;
+        }
+        
+        .control-panel {
+            margin-top: 20px;
+            background: #1e293b;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #334155;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+        
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        label {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #94a3b8;
+            font-weight: 700;
+        }
+        
+        .btn-group {
+            display: flex;
+            gap: 10px;
+        }
+        
+        button {
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 4px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+            font-size: 14px;
+        }
+        button:hover { background: #1d4ed8; }
+        button.accent { background: #059669; }
+        button.accent:hover { background: #047857; }
+        button.danger { background: #dc2626; }
+        button.danger:hover { background: #b91c1c; }
+        
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        input[type="range"] {
+            flex-grow: 1;
+            accent-color: #2563eb;
+        }
+        .val-display {
+            min-width: 35px;
+            text-align: right;
+            font-family: monospace;
+            font-size: 14px;
+            color: #38bdf8;
+        }
+        
+        .legend {
+            margin-top: 15px;
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            background: #0f172a;
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 13px;
+        }
+        .legend-item { display: flex; align-items: center; gap: 8px; }
+        .aspect-dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
+        
+        .telemetry-table {
+            width: 100%;
+            margin-top: 20px;
+            border-collapse: collapse;
+            font-size: 13px;
+            background: #1e293b;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid #334155;
+        }
+        .telemetry-table th, .telemetry-table td {
+            padding: 10px 15px;
+            text-align: left;
+            border-bottom: 1px solid #334155;
+        }
+        .telemetry-table th {
+            background: #0f172a;
+            color: #94a3b8;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 11px;
+        }
+        .telemetry-table tr:last-child td { border-bottom: none; }
+        .status-tag {
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+        .status-normal { background: rgba(5, 150, 105, 0.2); color: #34d399; }
+        .status-braking { background: rgba(220, 38, 38, 0.2); color: #f87171; }
+        .status-stopped { background: rgba(220, 38, 38, 0.4); color: #ef4444; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Sealdah Division Main Line Auto Signaling & Crossing Simulator</h1>
+    <h2>Real-time 4-Aspect ABS Logic Interlocking & Operational Layout Verification</h2>
+
+    <div class="canvas-container">
+        <canvas id="simCanvas" width="1200" height="420"></canvas>
+    </div>
+
+    <div class="legend">
+        <div class="legend-item"><span class="aspect-dot" style="background:#ef4444;"></span> Red (Stop / Occupied)</div>
+        <div class="legend-item"><span class="aspect-dot" style="background:#eab308;"></span> Yellow (Caution - Proceed restricted, expect stop)</div>
+        <div class="legend-item"><span class="aspect-dot" style="background:#eab308;"></span><span class="aspect-dot" style="background:#eab308;"></span> Double Yellow (Attention - Expect lower speed restriction)</div>
+        <div class="legend-item"><span class="aspect-dot" style="background:#22c55e;"></span> Green (Clear - Line clear for 3+ blocks)</div>
+        <div class="legend-item" style="margin-left:auto;"><span style="color:#f43f5e; font-weight:bold;">[■]</span> Interlocking / Loop Point Indicator</div>
+    </div>
+
+    <div class="control-panel">
+        <div class="control-group">
+            <label>Train Dispatcher Control</label>
+            <div class="btn-group">
+                <button onclick="spawnTrain('EMU')">Spawn Suburban EMU</button>
+                <button class="accent" onclick="spawnTrain('Express')">Spawn Express Mail</button>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <label>Naihati Jn Crossover Routing</label>
+            <div class="btn-group">
+                <button id="loopBtn" class="danger" onclick="toggleInterlocking()">Divert Express to Loop Line</button>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <label>Simulation Time Scale</label>
+            <div class="slider-container">
+                <input type="range" id="speedSlider" min="1" max="4" value="1" step="0.5" oninput="updateSpeedMultiplier(this.value)">
+                <span id="speedVal" class="val-display">1x</span>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <label>Emergency Block Hazard</label>
+            <div class="btn-group">
+                <button id="hazardBtn" style="background: #475569;" onclick="toggleHazard()">Inject Block 5 Fault</button>
+            </div>
+        </div>
+    </div>
+
+    <table class="telemetry-table">
+        <thead>
+            <tr>
+                <th>Train ID</th>
+                <th>Type</th>
+                <th>Location Baseline</th>
+                <th>Velocity</th>
+                <th>Target v</th>
+                <th>Next Signal Aspect</th>
+                <th>Control Dynamics Status</th>
+            </tr>
+        </thead>
+        <tbody id="telemetryBody">
+            <tr>
+                <td colspan="7" style="text-align: center; color: #64748b;">No dynamic rolling stock assets active inside the division block bounds.</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+<script>
+    const canvas = document.getElementById('simCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // Topology configuration: Sealdah Main Line chainage scaling
+    const STATIONS = [
+        { name: "Sealdah (SDAH)", x: 50 },
+        { name: "Bidhannagar Rd", x: 200 },
+        { name: "Dum Dum Jn (DDJ)", x: 380 },
+        { name: "Belgharia", x: 550 },
+        { name: "Sodpur", x: 720 },
+        { name: "Barrackpore (BP)", x: 920 },
+        { name: "Naihati Jn (NH)", x: 1140 }
+    ];
+
+    // Signal spacing setup (ABS blocks of ~1.2 km scaled metrics)
+    const NUM_BLOCKS = 12;
+    const BLOCK_LENGTH = (1120 - 60) / NUM_BLOCKS;
+    let signals = [];
+    for(let i=0; i<=NUM_BLOCKS; i++) {
+        signals.push({
+            id: i,
+            x: 60 + (i * BLOCK_LENGTH),
+            aspect: 3, // 0:R, 1:Y, 2:YY, 3:G
+            manualOverride: false
+        });
+    }
+
+    let trains = [];
+    let trainCounter = 0;
+    let simSpeed = 1;
+    let loopDiverted = false;
+    let block5Hazard = false;
+
+    // Fixed physical characteristics of rolling stock variants
+    const PHYSICS = {
+        EMU: { maxSpeed: 75, accel: 0.4, decel: 0.35, color: '#38bdf8', label: 'Suburban EMU Local' },
+        Express: { maxSpeed: 110, accel: 0.2, decel: 0.22, color: '#fb923c', label: 'Express Mail' }
+    };
+
+    function spawnTrain(type) {
+        trainCounter++;
+        trains.push({
+            id: type + "-" + (1000 + trainCounter),
+            type: type,
+            x: 50,
+            y: 180,
+            v: 10, // Initial velocity
+            targetV: PHYSICS[type].maxSpeed,
+            accel: PHYSICS[type].accel,
+            decel: PHYSICS[type].decel,
+            maxV: PHYSICS[type].maxSpeed,
+            color: PHYSICS[type].color,
+            length: type === 'Express' ? 35 : 25,
+            status: 'Normal Execution',
+            lastSignalSeen: 'G'
+        });
+    }
+
+    function toggleInterlocking() {
+        loopDiverted = !loopDiverted;
+        const btn = document.getElementById('loopBtn');
+        if(loopDiverted) {
+            btn.innerText = "Revert Points to Straight Main";
+            btn.className = "accent";
+        } else {
+            btn.innerText = "Divert Express to Loop Line";
+            btn.className = "danger";
+        }
+    }
+
+    function toggleHazard() {
+        block5Hazard = !block5Hazard;
+        const btn = document.getElementById('hazardBtn');
+        if(block5Hazard) {
+            btn.innerText = "Clear Block 5 Fault";
+            btn.style.background = "#dc2626";
+        } else {
+            btn.innerText = "Inject Block 5 Fault";
+            btn.style.background = "#475569";
+        }
+    }
+
+    function updateSpeedMultiplier(val) {
+        simSpeed = parseFloat(val);
+        document.getElementById('speedVal').innerText = val + "x";
+    }
+
+    // High fidelity 4-aspect signal control computation engine
+    function computeSignalingAspects() {
+        for (let i = 0; i < signals.length; i++) {
+            if (signals[i].manualOverride) continue;
+
+            let currentSigX = signals[i].x;
+            let nextSigX = (i + 1 < signals.length) ? signals[i+1].x : 1300;
+            let secondSigX = (i + 2 < signals.length) ? signals[i+2].x : 1400;
+            let thirdSigX = (i + 3 < signals.length) ? signals[i+3].x : 1500;
+
+            // Manual environment injection checking
+            if (block5Hazard && i === 5) {
+                signals[i].aspect = 0; 
+                continue;
+            }
+
+            // Check block structural occupancy matrices
+            let block1Occupied = trains.some(t => t.x >= currentSigX && t.x < nextSigX);
+            let block2Occupied = trains.some(t => t.x >= nextSigX && t.x < secondSigX);
+            let block3Occupied = trains.some(t => t.x >= secondSigX && t.x < thirdSigX);
+
+            // Interlocking route check at Naihati layout gateway (Signal index 10)
+            if (i === 10 && loopDiverted) {
+                signals[i].aspect = 1; // Restricted to Caution (Yellow) for structural loop crossover curve safety
+                continue;
+            }
+
+            if (block1Occupied) {
+                signals[i].aspect = 0; // Red
+            } else if (block2Occupied) {
+                signals[i].aspect = 1; // Yellow
+            } else if (block3Occupied) {
+                signals[i].aspect = 2; // Double Yellow
+            } else {
+                signals[i].aspect = 3; // Green
+            }
+        }
+    }
+
+    function updatePhysics() {
+        let dt = 0.05 * simSpeed;
+
+        // Process trains down the block grid
+        for (let t of trains) {
+            // Check downstream signals to modify structural targets
+            let nextSignal = null;
+            for (let sig of signals) {
+                if (sig.x > t.x) {
+                    nextSignal = sig;
+                    break;
+                }
+            }
+
+            if (nextSignal) {
+                let distanceToSignal = nextSignal.x - t.x;
+                
+                // Map logical speed restrictions matching physical distance curves
+                if (nextSignal.aspect === 0 && distanceToSignal < 120) {
+                    t.targetV = 0;
+                    t.status = 'Braking (Stop Aspect)';
+                    t.lastSignalSeen = 'R';
+                } else if (nextSignal.aspect === 1 && distanceToSignal < 160) {
+                    t.targetV = 30;
+                    t.status = 'Restricting Velocity';
+                    t.lastSignalSeen = 'Y';
+                } else if (nextSignal.aspect === 2 && distanceToSignal < 200) {
+                    t.targetV = 60;
+                    t.status = 'Awaiting Route Status';
+                    t.lastSignalSeen = 'YY';
+                } else {
+                    t.targetV = t.maxV;
+                    t.status = 'Normal Execution';
+                    t.lastSignalSeen = 'G';
+                }
+            } else {
+                t.targetV = t.maxV; // Safe run out zone
+            }
+
+            // Route adjustment handling at Naihati junction yard points
+            if (loopDiverted && t.x > 1000 && t.x < 1120) {
+                t.y = scalarLerp(t.y, 230, 0.05);
+            } else {
+                t.y = scalarLerp(t.y, 180, 0.05);
+            }
+
+            // Velocity interpolation tracking deceleration profile curves
+            if (t.v < t.targetV) {
+                t.v = Math.min(t.v + t.accel * dt * 10, t.targetV);
+            } else if (t.v > t.targetV) {
+                t.v = Math.max(t.v - t.decel * dt * 15, t.targetV);
+            }
+
+            if (t.v === 0) t.status = 'Stopped';
+
+            // Real-time coordinates execution
+            t.x += (t.v * 0.1) * dt;
+        }
+
+        // Clean out assets that successfully cleared structural limits of division boundary
+        trains = trains.filter(t => t.x < 1220);
+    }
+
+    function scalarLerp(start, end, amt) {
+        return (1 - amt) * start + amt * end;
+    }
+
+    function renderSimulationGrid() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Render Background base structural plates
+        ctx.fillStyle = '#1e293b';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Draw structural station reference indicators
+        STATIONS.forEach(st => {
+            ctx.strokeStyle = '#334155';
+            ctx.lineWidth = 1;
+            ctx.setLineDash([4, 4]);
+            ctx.beginPath();
+            ctx.moveTo(st.x, 60);
+            ctx.lineTo(st.x, 320);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            ctx.fillStyle = '#94a3b8';
+            ctx.font = 'bold 11px sans-serif';
+            ctx.fillText(st.name, st.x - 25, 45);
+        });
+
+        // Render permanent steel rail infrastructure layers
+        ctx.strokeStyle = '#475569';
+        ctx.lineWidth = 4;
+        
+        // Main Line Straight Track Array
+        ctx.beginPath();
+        ctx.moveTo(40, 180);
+        ctx.lineTo(1160, 180);
+        ctx.stroke();
+
+        // Naihati Crossover Loop Line Structure
+        ctx.beginPath();
+        ctx.moveTo(1000, 180);
+        ctx.lineTo(1030, 230);
+        ctx.lineTo(1140, 230);
+        ctx.stroke();
+
+        // Point Selector Junction Highlight Box
+        ctx.fillStyle = loopDiverted ? '#ef4444' : '#22c55e';
+        ctx.fillRect(996, 176, 8, 8);
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '9px monospace';
+        ctx.fillText("■ Pt 10A", 985, 165);
+
+        // Highlight active circuit block hazards if injected
+        if (block5Hazard) {
+            ctx.fillStyle = 'rgba(220, 38, 38, 0.15)';
+            ctx.fillRect(signals[5].x, 150, BLOCK_LENGTH, 60);
+            ctx.fillStyle = '#ef4444';
+            ctx.font = '10px sans-serif';
+            ctx.fillText("TRACK OCCUPANCY FAULT DETECTED", signals[5].x + 10, 140);
+        }
+
+        // Draw 4-Aspect Signal Head Assemblies
+        signals.forEach((sig, idx) => {
+            // Signal post
+            ctx.strokeStyle = '#64748b';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(sig.x, 180);
+            ctx.lineTo(sig.x, 120);
+            ctx.stroke();
+
+            // Head housing frame
+            ctx.fillStyle = '#0f172a';
+            ctx.fillRect(sig.x - 6, 85, 12, 35);
+            ctx.strokeStyle = '#334155';
+            ctx.strokeRect(sig.x - 6, 85, 12, 35);
+
+            // Aspect light assignment logic
+            let r = '#334155', y1 = '#334155', y2 = '#334155', g = '#334155';
+            if (sig.aspect === 0) r = '#ef4444';       // Red
+            if (sig.aspect === 1) y1 = '#eab308';      // Yellow
+            if (sig.aspect === 2) { y1 = '#eab308'; y2 = '#eab308'; } // Double Yellow
+            if (sig.aspect === 3) g = '#22c55e';       // Green
+
+            // Render physical color aspects to canvas lens array
+            ctx.fillStyle = g;  ctx.beginPath(); ctx.arc(sig.x, 90, 3, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = y1; ctx.beginPath(); ctx.arc(sig.x, 98, 3, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = y2; ctx.beginPath(); ctx.arc(sig.x, 106, 3, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = r;  ctx.beginPath(); ctx.arc(sig.x, 114, 3, 0, Math.PI*2); ctx.fill();
+
+            // ID Plate Tag
+            ctx.fillStyle = '#64748b';
+            ctx.font = '9px monospace';
+            ctx.fillText(`A-${sig.id}`, sig.x - 10, 80);
+        });
+
+        // Draw dynamic train assets across blocks
+        trains.forEach(t => {
+            ctx.fillStyle = t.color;
+            // Draw main train body box
+            ctx.fillRect(t.x - t.length, t.y - 8, t.length, 14);
+            
+            // Front cabin windshield highlight indicator directional marker
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(t.x - 4, t.y - 6, 4, 10);
+
+            // Print dynamic ID tag mapping alongside running telemetry data
+            ctx.fillStyle = '#f8fafc';
+            ctx.font = '10px monospace';
+            ctx.fillText(t.id, t.x - t.length, t.y - 14);
+            ctx.fillStyle = '#94a3b8';
+            ctx.fillText(`${Math.round(t.v)} km/h`, t.x - t.length, t.y + 18);
+        });
+    }
+
+    function renderTelemetryTable() {
+        const tbody = document.getElementById('telemetryBody');
+        if(trains.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: #64748b;">No dynamic rolling stock assets active inside the division block bounds.</td></tr>`;
+            return;
+        }
+
+        let html = '';
+        trains.forEach(t => {
+            let statusClass = 'status-normal';
+            if (t.status.includes('Braking') || t.status.includes('Restricting')) statusClass = 'status-braking';
+            if (t.status === 'Stopped') statusClass = 'status-stopped';
+
+            let aspectDisplay = `<span style="color:#22c55e;font-weight:bold;">🟢 Clear [G]</span>`;
+            if(t.lastSignalSeen === 'R') aspectDisplay = `<span style="color:#ef4444;font-weight:bold;">🔴 Danger [R]</span>`;
+            if(t.lastSignalSeen === 'Y') aspectDisplay = `<span style="color:#eab308;font-weight:bold;">🟡 Caution [Y]</span>`;
+            if(t.lastSignalSeen === 'YY') aspectDisplay = `<span style="color:#eab308;font-weight:bold;">🟡🟡 Attention [YY]</span>`;
+
+            html += `<tr>
+                <td style="font-family: monospace; font-weight: bold; color: ${t.color}">${t.id}</td>
+                <td>${PHYSICS[t.type].label}</td>
+                <td>Ch. ${(t.x * 0.05).toFixed(2)} km</td>
+                <td style="font-family: monospace; font-weight: bold; color: #38bdf8">${Math.round(t.v)} km/h</td>
+                <td style="font-family: monospace; color: #64748b">${t.targetV} km/h</td>
+                <td>${aspectDisplay}</td>
+                <td><span class="status-tag ${statusClass}">${t.status}</span></td>
+            </tr>`;
+        });
+        tbody.innerHTML = html;
+    }
+
+    // Central executive tick engine loop
+    function simulationTick() {
+        computeSignalingAspects();
+        updatePhysics();
+        renderSimulationGrid();
+        renderTelemetryTable();
+        requestAnimationFrame(simulationTick);
+    }
+
+    // Seed Initial Operations Array assets
+    spawnTrain('EMU');
+    setTimeout(() => spawnTrain('Express'), 3500);
+
+    // Run Engine Loop
+    simulationTick();
+</script>
+
+</body>
+</html>
