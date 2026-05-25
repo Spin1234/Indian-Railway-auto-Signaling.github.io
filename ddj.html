@@ -3,579 +3,432 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dum Dum Jn. - Ultimate Auto-Interlocking & CTC Panel</title>
+    <title>Dum Dum Jn. - Electronic Interlocking Web Panel</title>
     <style>
         :root {
-            --bg-color: #090d16;
-            --panel-bg: #131824;
-            --track-empty: #334155;
-            --track-locked: #ca8a04;
-            --track-occupied: #dc2626;
-            --text-color: #f8fafc;
-            --accent-color: #38bdf8;
+            --bg-main: #090d16;
+            --bg-panel: #020617;
+            --bg-control: #131824;
+            --btn-bg: #1e293b;
+            --btn-hover: #334155;
+            --text-cyan: #38bdf8;
+            --text-green: #22c55e;
+            --text-rose: #f43f5e;
+            --text-muted: #64748b;
         }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
 
         body {
+            background-color: var(--bg-main);
+            color: #ffffff;
             font-family: 'Courier New', Courier, monospace;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            margin: 0;
-            padding: 15px;
-            user-select: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            overflow-x: hidden;
         }
 
-        header {
-            text-align: center;
-            border-bottom: 3px double var(--accent-color);
-            padding-bottom: 6px;
+        h2 {
+            color: var(--text-cyan);
             margin-bottom: 15px;
-        }
-
-        header h1 {
-            margin: 0;
-            font-size: 24px;
-            letter-spacing: 2px;
-            color: var(--accent-color);
-            text-shadow: 0 0 10px rgba(56, 189, 248, 0.3);
-        }
-
-        header p { margin: 5px 0 0 0; font-size: 11px; color: #94a3b8; font-weight: bold; }
-
-        #synoptic-panel {
-            background-color: #020617;
-            border: 4px solid #475569;
-            position: relative;
-            width: 1150px;
-            height: 450px;
-            margin: 0 auto;
-            overflow: hidden;
-            box-shadow: inset 0 0 40px rgba(0,0,0,0.9), 0 10px 25px rgba(0,0,0,0.7);
-        }
-
-        svg {
-            position: absolute;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            z-index: 1;
-        }
-
-        .track-bg { stroke: #090d16; stroke-width: 14; fill: none; stroke-linecap: round; }
-        .track { stroke: var(--track-empty); stroke-width: 4; fill: none; stroke-linecap: round; transition: stroke 0.1s ease; }
-        .track.locked { stroke: var(--track-locked); }
-        .track.occupied { stroke: var(--track-occupied); }
-
-        .lbl { font-size: 10px; fill: #64748b; font-weight: bold; }
-        .lbl-pf { font-size: 11px; fill: #38bdf8; font-weight: bold; letter-spacing: 1px; }
-        .lbl-route { font-size: 11px; fill: #e2e8f0; font-weight: bold; }
-
-        .signal-post { stroke: #94a3b8; stroke-width: 2; }
-        .signal-head { fill: #000000; stroke: #475569; stroke-width: 1.5; }
-        .aspect { transition: fill 0.1s ease; }
-        
-        /* Indian Railways Route Indicator (Feather Position) */
-        .feather-line { stroke: #ffffff; stroke-width: 2; stroke-linecap: round; opacity: 0; transition: opacity 0.15s ease; }
-        .feather-line.active { opacity: 1; }
-
-        .control-container {
-            width: 1150px;
-            margin: 15px auto 0 auto;
-            display: grid;
-            grid-template-columns: 1fr 1fr 1.2fr;
-            gap: 15px;
-        }
-
-        .card {
-            background-color: var(--panel-bg);
-            border: 2px solid #334155;
-            padding: 12px; border-radius: 6px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
-        }
-        .card h3 {
-            margin: 0 0 10px 0; font-size: 13px; color: var(--accent-color);
-            border-bottom: 1px solid #334155; padding-bottom: 6px; text-transform: uppercase;
-            display: flex; justify-content: space-between; align-items: center;
-        }
-
-        .btn-group { display: flex; flex-wrap: wrap; gap: 8px; }
-        button {
-            background-color: #1e293b; color: #fff; border: 1px solid #475569;
-            padding: 8px 14px; font-family: inherit; font-size: 11px; cursor: pointer;
-            font-weight: bold; border-radius: 4px; transition: all 0.2s ease;
-        }
-        button:hover { background-color: #334155; border-color: #64748b; }
-        button:disabled { opacity: 0.2; cursor: not-allowed; }
-        button.active { background-color: #0369a1; border-color: var(--accent-color); box-shadow: 0 0 8px rgba(56,189,248,0.4); }
-        button.danger { background-color: #991b1b; border-color: #ef4444; text-shadow: 0 1px 2px #000; }
-
-        #log-card { grid-column: 1 / span 3; }
-        #sys-logs {
-            background-color: #020617; border: 1px solid #334155; height: 130px;
-            overflow-y: auto; padding: 10px; font-size: 11px; color: #22c55e; border-radius: 4px;
-        }
-        .log-entry { margin-bottom: 5px; line-height: 1.4; border-left: 3px solid #1e293b; padding-left: 6px; }
-        .log-time { color: #64748b; margin-right: 6px; }
-        .status-badge {
-            font-size: 10px; padding: 2px 6px; background: #0f172a;
-            border-radius: 3px; color: #22c55e; border: 1px solid #16a34a;
+            font-size: 1.3rem;
             font-weight: bold;
+            text-align: center;
+            letter-spacing: 1px;
+        }
+
+        #panel-container {
+            width: 1110px;
+            background-color: var(--bg-panel);
+            border: 2px solid #1e293b;
+            border-radius: 6px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.7);
+            position: relative;
+        }
+
+        canvas {
+            display: block;
+            background-color: var(--bg-panel);
+        }
+
+        #control-bar {
+            width: 1110px;
+            background-color: var(--bg-control);
+            border: 1px solid #1e293b;
+            border-radius: 4px;
+            margin-top: 15px;
+            padding: 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .panel-label {
+            color: #94a3b8;
+            font-size: 0.85rem;
+            font-weight: bold;
+            margin-right: 5px;
+        }
+
+        button {
+            background-color: var(--btn-bg);
+            color: #ffffff;
+            border: 1px solid #475569;
+            padding: 8px 14px;
+            font-family: inherit;
+            font-size: 0.8rem;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: background 0.2s, border-color 0.2s;
+        }
+
+        button:hover {
+            background-color: var(--btn-hover);
+            border-color: var(--text-cyan);
+        }
+
+        #logger-container {
+            width: 1110px;
+            margin-top: 15px;
+        }
+
+        #log-box {
+            width: 100%;
+            height: 140px;
+            background-color: var(--bg-panel);
+            border: 1px solid #1e293b;
+            border-radius: 4px;
+            padding: 10px;
+            font-size: 0.85rem;
+            color: var(--text-green);
+            overflow-y: auto;
+            white-space: pre-wrap;
+            line-height: 1.4;
         }
     </style>
 </head>
 <body>
 
-    <header>
-        <h1>DUM DUM JUNCTION AUTOMATIC INTERLOCKING CONTROL CENTRE</h1>
-        <p>FAIL-SAFE VECTOR ROUTE LOCKING & LIVE MULTI-ASPECT SIGNAL OPTIMIZATION ENGINE</p>
-    </header>
+    <h2>DUM DUM JUNCTION AUTOMATIC SYSTEMS PANEL - FAIL SAFE WEB RRI</h2>
 
-    <div id="synoptic-panel">
-        <svg id="rri-svg">
-            <g id="tracks-bg-layer"></g>
-            <g id="tracks-layer"></g>
-            <g id="signals-layer"></g>
-            <g id="trains-layer"></g>
-            
-            <g id="labels-layer">
-                <text x="15" y="65" class="lbl">← UP MAIN (SEALDAH)</text>
-                <text x="15" y="185" class="lbl">← UP CHORD (SEALDAH)</text>
-                
-                <text x="460" y="55" class="lbl-pf">PLATFORM 1 [UP MAIN - EXPRESS CORRIDOR]</text>
-                <text x="460" y="115" class="lbl-pf">PLATFORM 2 [DN MAIN / DN CHORD TERMINAL]</text>
-                <text x="460" y="175" class="lbl-pf">PLATFORM 3 [UP CHORD / UP BANGAON LOCAL]</text>
-                <text x="460" y="235" class="lbl-pf">PLATFORM 4 [DN BANGAON / HASNABAD LOCAL]</text>
-                <text x="460" y="295" class="lbl-pf">PLATFORM 5 [CIRCULAR RLY BYPASS]</text>
-
-                <text x="920" y="75" class="lbl-route">MAIN LINE (NAIHATI / LALGOLA) →</text>
-                <text x="920" y="175" class="lbl-route">CHORD LINE (DANKUNI / BWN) →</text>
-                <text x="920" y="245" class="lbl-route">BANGAON LINE (RANAGHAT BYPASS) →</text>
-                <text x="920" y="315" class="lbl-route">CIRCULAR BALIAGHATA LINE →</text>
-            </g>
-        </svg>
+    <div id="panel-container">
+        <canvas id="paintArea" width="1110" height="380"></canvas>
     </div>
 
-    <div class="control-container">
-        <div class="card">
-            <h3>UP Line Traffic (Northbound)</h3>
-            <div class="btn-group">
-                <button class="btn-up" onclick="forceInjectTrain('UP', 'MAIN')">Inject P1 (Main Line)</button>
-                <button class="btn-up" onclick="forceInjectTrain('UP', 'CHORD')">Inject P3 (Dankuni Local)</button>
-                <button class="btn-up" onclick="forceInjectTrain('UP', 'BANG')">Inject P3 (Bangaon Local)</button>
-                <button class="btn-up" onclick="forceInjectTrain('UP', 'CIRCULAR')">Inject P5 (Circular Rail)</button>
-            </div>
-        </div>
+    <div id="control-bar">
+        <span class="panel-label">CTC OPERATION PANEL:</span>
+        <button onclick="injectTrain('UP', 'P1')">Inject P1 (Up Main)</button>
+        <button onclick="injectTrain('UP', 'P3')">Inject P3 (Up Chord)</button>
+        <button onclick="injectTrain('DOWN', 'P2')">Inject P2 (Dn Main)</button>
+        <button onclick="injectTrain('DOWN', 'P4')">Inject P4 (Dn Bangaon)</button>
+        <button onclick="injectTrain('DOWN', 'P5')">Inject P5 (Dn Circular)</button>
+    </div>
 
-        <div class="card">
-            <h3>DOWN Line Traffic (Southbound)</h3>
-            <div class="btn-group">
-                <button class="btn-down" onclick="forceInjectTrain('DOWN', 'MAIN')">Inject P2 (Naihati Main)</button>
-                <button class="btn-down" onclick="forceInjectTrain('DOWN', 'CHORD')">Inject P2 (Dankuni local)</button>
-                <button class="btn-down" onclick="forceInjectTrain('DOWN', 'BANG')">Inject P4 (Bangaon Local)</button>
-            </div>
-        </div>
-
-        <div class="card">
-            <h3>Fail-Safe Automation Controls <span id="panel-status-badge" class="status-badge">AUTO INTERLOCKED</span></h3>
-            <div class="btn-group" style="margin-bottom: 10px;">
-                <button id="mode-auto" class="active" style="width: 100%;">DEADLOCK-FREE INTELLIGENT SCHEDULER</button>
-            </div>
-            <div class="btn-group">
-                <button class="danger" onclick="emergencyAllRed()">EMERGENCY ALL RED (🔴)</button>
-                <button onclick="hardResetPanel()" style="border-color:#64748b;">RESET MAP CIRCUITS</button>
-            </div>
-        </div>
-
-        <div class="card" id="log-card">
-            <h3>Live Electronic Interlocking Data Streams</h3>
-            <div id="sys-logs"></div>
-        </div>
+    <div id="logger-container">
+        <div id="log-box"></div>
     </div>
 
     <script>
-        // High-Precision Pixel Perfect Track Array Configuration
-        const tracksData = {
-            'SEAL_UP_M':   { path: "M 20,80 L 250,80" },
-            'P1_TRK':      { path: "M 250,80 L 680,80" },
-            'OUT_MAIN':    { path: "M 680,80 L 1120,80" },
-            
-            'SEAL_UP_C':   { path: "M 20,200 L 250,200" },
-            'P3_TRK':      { path: "M 250,200 L 680,200" },
-            'DIV_CHORD':   { path: "M 680,200 L 730,200 L 770,180 L 1120,180" },
-            'DIV_BANG':    { path: "M 680,200 L 740,200 L 800,250 L 1120,250" },
-            
-            'S_XOVER_P5':  { path: "M 20,200 L 120,200 L 200,320 L 250,320" }, 
-            'P5_TRK':      { path: "M 250,320 L 680,320" },
-            'OUT_CIRC':    { path: "M 680,320 L 1120,320" },
-            
-            'IN_MAIN':     { path: "M 1120,140 L 680,140" },
-            'P2_TRK':      { path: "M 680,140 L 250,140" },
-            'SEAL_DN_M':   { path: "M 250,140 L 20,140" },
-            
-            'IN_CHORD':    { path: "M 1120,210 L 840,210 L 750,140 L 680,140" }, 
-            'IN_BANG':     { path: "M 1120,280 L 840,280 L 780,260 L 680,260" },
-            'P4_TRK':      { path: "M 680,260 L 250,260" },
-            'SEAL_DN_B':   { path: "M 250,260 L 20,260" }
+        const canvas = document.getElementById('paintArea');
+        const ctx = canvas.getContext('2d');
+        const logBox = document.getElementById('log-box');
+
+        // =================================================================
+        // FIXED ELECTRONIC INTERLOCKING GEOMETRY (ALL 5 PANEL PLATFORMS)
+        // =================================================================
+        const TRACK_GEOMETRY = {
+            'SEAL_UP_APP':      [[30, 100], [200, 100]],    
+            'P1_TRK':           [[200, 100], [650, 100]],   
+            'MAIN_LINE_OUT':    [[650, 100], [1050, 100]],  
+
+            'SEAL_CHORD_APP':   [[30, 200], [200, 200]],    
+            'P3_TRK':           [[200, 200], [650, 200]],   
+            'CHORD_LINE_OUT':   [[650, 200], [760, 200], [820, 160], [1050, 160]],
+
+            'DN_MAIN_APP':      [[1050, 150], [700, 150]],  
+            'P2_TRK':           [[700, 150], [250, 150]],   
+            'SEAL_MAIN_DN_OUT': [[250, 150], [30, 150]],    
+
+            'DN_BANG_APP':      [[1050, 250], [700, 250]],  
+            'P4_TRK':           [[700, 250], [250, 250]],   
+            'SEAL_BANG_DN_OUT': [[250, 250], [30, 250]],    
+
+            'DN_CIRC_APP':      [[1050, 300], [700, 300]],  
+            'P5_TRK':           [[700, 300], [250, 300]],   
+            'CIRCULAR_DN_OUT':  [[250, 300], [30, 300]]     
         };
 
-        // Real Multi-Aspect Signal Matrix Layout (Includes Route Direction Indicators)
-        const signalsConfig = [
-            { id: 'S1_HOME', x: 90, y: 80, dir: 'UP', aspect: 'RED', label: 'S1-HOME', featherAngle: 0 },
-            { id: 'S3_HOME', x: 90, y: 200, dir: 'UP', aspect: 'RED', label: 'S3-HOME', featherAngle: 0 },
-            { id: 'S5_STRTR', x: 660, y: 80, dir: 'UP', aspect: 'RED', label: 'P1-STRTR', featherAngle: 0 },
-            { id: 'S7_STRTR', x: 660, y: 200, dir: 'UP', aspect: 'RED', label: 'P3-STRTR', featherAngle: -30 }, // Structural Divergence Feather
-            { id: 'S9_STRTR', x: 660, y: 320, dir: 'UP', aspect: 'RED', label: 'P5-STRTR', featherAngle: 0 },
+        const SIGNALS_CONFIG = [
+            {id: 'S1_HOME',   track: 'SEAL_UP_APP',      x: 200, y: 100, lbl: 'S1-HOME',    side: -1},
+            {id: 'S3_HOME',   track: 'SEAL_CHORD_APP',   x: 200, y: 200, lbl: 'S3-HOME',    side: -1},
+            {id: 'P1_STRTR',  track: 'P1_TRK',           x: 650, y: 100, lbl: 'P1-STRTR',   side: -1},
+            {id: 'P3_STRTR',  track: 'P3_TRK',           x: 650, y: 200, lbl: 'P3-STRTR',   side: -1},
             
-            { id: 'S2_DN_HOME', x: 1040, y: 140, dir: 'DOWN', aspect: 'RED', label: 'DN-MAIN-H', featherAngle: 0 },
-            { id: 'S4_DN_HOME', x: 1040, y: 210, dir: 'DOWN', aspect: 'RED', label: 'DN-CHRD-H', featherAngle: 30 },
-            { id: 'S6_DN_HOME', x: 1040, y: 280, dir: 'DOWN', aspect: 'RED', label: 'DN-BANG-H', featherAngle: 0 },
-            
-            { id: 'S8_DN_STRTR', x: 270, y: 140, dir: 'DOWN', aspect: 'RED', label: 'P2-STRTR', featherAngle: 0 },
-            { id: 'S10_DN_STRTR', x: 270, y: 260, dir: 'DOWN', aspect: 'RED', label: 'P4-STRTR', featherAngle: 0 }
+            {id: 'DN_HOME_M', track: 'DN_MAIN_APP',      x: 700, y: 150, lbl: 'DN-HOME-M',  side: 1},
+            {id: 'DN_HOME_B', track: 'DN_BANG_APP',      x: 700, y: 250, lbl: 'DN-HOME-B',  side: 1},
+            {id: 'DN_HOME_C', track: 'DN_CIRC_APP',      x: 700, y: 300, lbl: 'DN-HOME-C',  side: 1},
+            {id: 'P2_STRTR',  track: 'P2_TRK',           x: 250, y: 150, lbl: 'P2-STRTR',   side: 1},
+            {id: 'P4_STRTR',  track: 'P4_TRK',           x: 250, y: 250, lbl: 'P4-STRTR',   side: 1},
+            {id: 'P5_STRTR',  track: 'P5_TRK',           x: 250, y: 300, lbl: 'P5-STRTR',   side: 1}
         ];
 
+        // Panel System Variables
         let trackOccupancy = {};
-        let signals = {};
+        let signalAspects = {};
         let activeTrains = [];
-        let logBuffer = [];
-        let systemClock = 0;
+        let clockTicks = 0;
 
-        window.onload = function() {
-            initSystem();
-            renderSynopticMap();
-            addLog("SYSTEM START: Dynamic Multi-Route Anti-Collision Logic Verified.");
-            setInterval(coreInterlockingEngine, 30);
-        };
+        // Initialize tracking maps
+        for (let key in TRACK_GEOMETRY) trackOccupancy[key] = null;
+        SIGNALS_CONFIG.forEach(s => signalAspects[s.id] = 'RED');
 
-        function initSystem() {
-            for (let trk in tracksData) { trackOccupancy[trk] = null; }
-            signalsConfig.forEach(s => { signals[s.id] = 'RED'; });
-            activeTrains = [];
+        function logMessage(msg) {
+            logBox.innerHTML += `>> ${msg}\n`;
+            logBox.scrollTop = logBox.scrollHeight;
         }
 
-        function renderSynopticMap() {
-            const bgLayer = document.getElementById('tracks-bg-layer');
-            const mainLayer = document.getElementById('tracks-layer');
-            const sigLayer = document.getElementById('signals-layer');
+        logMessage("INTERLOCKING REGISTER ENGAGED: Web-based relay system synchronized.");
 
-            bgLayer.innerHTML = ''; mainLayer.innerHTML = ''; sigLayer.innerHTML = '';
-
-            for (let id in tracksData) {
-                let p = tracksData[id].path;
-                let bLine = document.createElementNS("http://www.w3.org/2000/svg", "path");
-                bLine.setAttribute("d", p); bLine.setAttribute("class", "track-bg");
-                bgLayer.appendChild(bLine);
-
-                let mLine = document.createElementNS("http://www.w3.org/2000/svg", "path");
-                mLine.setAttribute("d", p); mLine.setAttribute("id", "track-" + id);
-                mLine.setAttribute("class", "track");
-                mainLayer.appendChild(mLine);
+        function injectTrain(direction, platform) {
+            let path = [];
+            if (direction === 'UP') {
+                path = (platform === 'P1') ? ['SEAL_UP_APP', 'P1_TRK', 'MAIN_LINE_OUT'] : ['SEAL_CHORD_APP', 'P3_TRK', 'CHORD_LINE_OUT'];
+            } else {
+                if (platform === 'P2') path = ['DN_MAIN_APP', 'P2_TRK', 'SEAL_MAIN_DN_OUT'];
+                else if (platform === 'P4') path = ['DN_BANG_APP', 'P4_TRK', 'SEAL_BANG_DN_OUT'];
+                else path = ['DN_CIRC_APP', 'P5_TRK', 'CIRCULAR_DN_OUT'];
             }
 
-            signalsConfig.forEach(s => {
-                let g = document.createElementNS("http://www.w3.org/2000/svg", "g");
-                let offset = (s.dir === 'UP') ? -16 : 16;
-
-                // Signal Mast
-                let post = document.createElementNS("http://www.w3.org/2000/svg", "line");
-                post.setAttribute("x1", s.x); post.setAttribute("y1", s.y);
-                post.setAttribute("x2", s.x); post.setAttribute("y2", s.y + offset);
-                post.setAttribute("class", "signal-post");
-                g.appendChild(post);
-
-                // Aspect Housing
-                let head = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-                head.setAttribute("x", s.x - 7); head.setAttribute("y", (s.dir === 'UP') ? s.y - 28 : s.y + 16);
-                head.setAttribute("width", 14); head.setAttribute("height", 14); head.setAttribute("rx", 2);
-                head.setAttribute("class", "signal-head");
-                g.appendChild(head);
-
-                // LED Bulb
-                let lamp = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-                lamp.setAttribute("cx", s.x); lamp.setAttribute("cy", (s.dir === 'UP') ? s.y - 21 : s.y + 23);
-                lamp.setAttribute("r", 4.5); lamp.setAttribute("id", "aspect-" + s.id); lamp.setAttribute("class", "aspect");
-                g.appendChild(lamp);
-
-                // Route Indicators (Directional Line Feathers)
-                if(s.featherAngle !== 0) {
-                    let fx2 = s.x + (12 * Math.sin(s.featherAngle * Math.PI / 180));
-                    let fy2 = ((s.dir === 'UP') ? s.y - 28 : s.y + 16) + (12 * Math.cos(s.featherAngle * Math.PI / 180));
-                    let fLine = document.createElementNS("http://www.w3.org/2000/svg", "line");
-                    fLine.setAttribute("x1", s.x); fLine.setAttribute("y1", (s.dir === 'UP') ? s.y - 28 : s.y + 16);
-                    fLine.setAttribute("x2", fx2); fLine.setAttribute("y2", fy2);
-                    fLine.setAttribute("id", "feather-" + s.id); fLine.setAttribute("class", "feather-line");
-                    g.appendChild(fLine);
-                }
-
-                let text = document.createElementNS("http://www.w3.org/2000/svg", "text");
-                text.setAttribute("x", s.x); text.setAttribute("y", (s.dir === 'UP') ? s.y - 36 : s.y + 44);
-                text.setAttribute("class", "lbl"); text.setAttribute("text-anchor", "middle");
-                text.textContent = s.label;
-                g.appendChild(text);
-                sigLayer.appendChild(g);
-            });
-        }
-
-        // Deadlock Elimination Automation Layer
-        function executeAutoScheduler() {
-            systemClock++;
-            if (systemClock % 140 === 0) {
-                const upBranches = ['MAIN', 'CHORD', 'BANG', 'CIRCULAR'];
-                const dnBranches = ['MAIN', 'CHORD', 'BANG'];
-                
-                if (Math.random() > 0.4) {
-                    autoInjectEngine('UP', upBranches[Math.floor(Math.random() * upBranches.length)]);
-                } else {
-                    autoInjectEngine('DOWN', dnBranches[Math.floor(Math.random() * dnBranches.length)]);
-                }
-            }
-        }
-
-        function autoInjectEngine(dir, branch) {
-            let path = getRoutePath(dir, branch);
-            // Block admission if route entry is held down by another train footprint
-            if (trackOccupancy[path[0]] !== null) return; 
-            spawnTrainInstance(dir, branch, path, true);
-        }
-
-        function forceInjectTrain(dir, branch) {
-            let path = getRoutePath(dir, branch);
             if (trackOccupancy[path[0]] !== null) {
-                addLog(`🛑 Interlocking Reject: Entry track block ${path[0]} is currently locked or occupied.`);
+                logMessage(`❌ INJECTION BLOCKED: Approach section ${path[0]} occupied.`);
                 return;
             }
-            spawnTrainInstance(dir, branch, path, false);
-        }
 
-        function getRoutePath(direction, branch) {
-            if (direction === 'UP') {
-                if (branch === 'MAIN') return ['SEAL_UP_M', 'P1_TRK', 'OUT_MAIN'];
-                if (branch === 'CHORD') return ['SEAL_UP_C', 'P3_TRK', 'DIV_CHORD'];
-                if (branch === 'BANG') return ['SEAL_UP_C', 'P3_TRK', 'DIV_BANG'];
-                if (branch === 'CIRCULAR') return ['S_XOVER_P5', 'P5_TRK', 'OUT_CIRC'];
-            } else {
-                if (branch === 'MAIN') return ['IN_MAIN', 'P2_TRK', 'SEAL_DN_M'];
-                if (branch === 'CHORD') return ['IN_CHORD', 'P2_TRK', 'SEAL_DN_M'];
-                if (branch === 'BANG') return ['IN_BANG', 'P4_TRK', 'SEAL_DN_B'];
-            }
-        }
-
-        function spawnTrainInstance(direction, branch, path, isAuto) {
-            let srcMap = { 'MAIN': 'NH', 'CHORD': 'DKAE', 'BANG': 'BNJ', 'CIRCULAR': 'KOAA' };
-            let destMap = { 'MAIN': 'SDAH-M', 'CHORD': 'SDAH-C', 'BANG': 'SDAH-B' };
-            let code = (direction === 'UP') ? srcMap[branch] : destMap[branch];
-            
-            let id = `${code}-${isAuto ? 'EMU' : 'EXP'}-${Math.floor(Math.random() * 89 + 10)}`;
-            
+            let t_id = `${platform.startsWith('P1') || platform.startsWith('P2') ? 'EXP' : 'EMU'}-${Math.floor(100 + Math.random() * 899)}`;
             let newTrain = {
-                id: id, dir: direction, route: branch,
-                segments: path, currentSegmentIdx: 0, progress: 0.0,
-                speed: isAuto ? 0.012 : 0.016, originalSpeed: isAuto ? 0.012 : 0.016,
-                isStationDwell: false, stationDwellTimer: 0
+                id: t_id, direction: direction, route_path: path,
+                current_idx: 0, progress: 0.0, current_speed: 0.02, max_speed: 0.02,
+                state: 'RUNNING', dwell_counter: 0, has_berthed_here: false
             };
 
             activeTrains.push(newTrain);
-            trackOccupancy[path[0]] = id;
-            addLog(`⚡ Train [${id}] clear to enter tracking domain via ${branch} line.`);
+            trackOccupancy[path[0]] = t_id;
+            logMessage(`🟢 Despatched train ${t_id} into layout boundary.`);
         }
 
-        function coreInterlockingEngine() {
-            executeAutoScheduler();
-            processInterlockingMatrix();
-            refreshPanelDisplays();
-            advanceTrainVectors();
-            drawDynamicTrains();
-        }
-
-        // Complex Cascading Look-Ahead Signal Logic
-        function processInterlockingMatrix() {
-            // Default Signal Map State Check
-            signals['S1_HOME'] = (trackOccupancy['P1_TRK'] === null) ? 'GREEN' : 'RED';
-            signals['S3_HOME'] = (trackOccupancy['P3_TRK'] === null) ? 'YELLOW' : 'RED';
+        function evaluateInterlocking() {
+            // UP Logic
+            signalAspects['S1_HOME'] = trackOccupancy['P1_TRK'] ? 'RED' : 'GREEN';
+            signalAspects['P1_STRTR'] = trackOccupancy['MAIN_LINE_OUT'] ? 'RED' : 'GREEN';
+            signalAspects['S3_HOME'] = trackOccupancy['P3_TRK'] ? 'RED' : 'YELLOW';
+            signalAspects['P3_STRTR'] = trackOccupancy['CHORD_LINE_OUT'] ? 'RED' : 'GREEN';
             
-            // Starters Logic mapping ahead blocks
-            signals['S5_STRTR'] = (trackOccupancy['OUT_MAIN'] === null) ? 'GREEN' : 'RED';
-            
-            // Platform 3 Starter with look-ahead fork verification
-            let p3Occupant = activeTrains.find(t => t.segments[t.currentSegmentIdx] === 'P3_TRK');
-            if (p3Occupant) {
-                let targetFork = (p3Occupant.route === 'CHORD') ? 'DIV_CHORD' : 'DIV_BANG';
-                signals['S7_STRTR'] = (trackOccupancy[targetFork] === null) ? 'YELLOW' : 'RED';
-            } else {
-                signals['S7_STRTR'] = 'RED';
-            }
-
-            signals['S9_STRTR'] = (trackOccupancy['OUT_CIRC'] === null) ? 'GREEN' : 'RED';
-
-            // Down Tracks Protection Circuits
-            signals['S2_DN_HOME'] = (trackOccupancy['P2_TRK'] === null) ? 'YELLOW' : 'RED';
-            signals['S4_DN_HOME'] = (trackOccupancy['P2_TRK'] === null && trackOccupancy['IN_MAIN'] === null) ? 'GREEN' : 'RED';
-            signals['S6_DN_HOME'] = (trackOccupancy['P4_TRK'] === null) ? 'YELLOW' : 'RED';
-
-            signals['S8_DN_STRTR'] = (trackOccupancy['SEAL_DN_M'] === null) ? 'GREEN' : 'RED';
-            signals['S10_DN_STRTR'] = (trackOccupancy['SEAL_DN_B'] === null) ? 'GREEN' : 'RED';
+            // DOWN Logic
+            signalAspects['DN_HOME_M'] = trackOccupancy['P2_TRK'] ? 'RED' : 'GREEN';
+            signalAspects['P2_STRTR'] = trackOccupancy['SEAL_MAIN_DN_OUT'] ? 'RED' : 'GREEN';
+            signalAspects['DN_HOME_B'] = trackOccupancy['P4_TRK'] ? 'RED' : 'YELLOW';
+            signalAspects['P4_STRTR'] = trackOccupancy['SEAL_BANG_DN_OUT'] ? 'RED' : 'GREEN';
+            signalAspects['DN_HOME_C'] = trackOccupancy['P5_TRK'] ? 'RED' : 'GREEN';
+            signalAspects['P5_STRTR'] = trackOccupancy['CIRCULAR_DN_OUT'] ? 'RED' : 'GREEN';
         }
 
-        function advanceTrainVectors() {
+        function updateTrainPositions() {
             for (let i = activeTrains.length - 1; i >= 0; i--) {
-                let train = activeTrains[i];
+                let t = activeTrains[i];
+                let curr_blk = t.route_path[t.current_idx];
 
-                // Smooth Station Commuter Berthing & Loading Logic
-                if (train.isStationDwell) {
-                    train.stationDwellTimer++;
-                    if (train.stationDwellTimer > 120) { // Authentic stop delay window
-                        train.isStationDwell = false;
-                        train.stationDwellTimer = 0;
-                        addLog(`📋 Station Manifest complete. [${train.id}] departs platform block.`);
+                if (t.state === 'BERTHED') {
+                    t.dwell_counter++;
+                    t.current_speed = 0.0;
+                    if (t.dwell_counter >= 80) {
+                        t.state = 'RUNNING';
+                        logMessage(`🔔 Train ${t.id} finished boarding. Seeking departure route aspect.`);
                     }
-                    continue; 
+                    continue;
                 }
 
-                let curSeg = train.segments[train.currentSegmentIdx];
+                // Associate matching block protecting signal
+                let sig_aspect = 'GREEN';
+                if (curr_blk === 'SEAL_UP_APP')      sig_aspect = signalAspects['S1_HOME'];
+                else if (curr_blk === 'SEAL_CHORD_APP') sig_aspect = signalAspects['S3_HOME'];
+                else if (curr_blk === 'P1_TRK')         sig_aspect = signalAspects['P1_STRTR'];
+                else if (curr_blk === 'P3_TRK')         sig_aspect = signalAspects['P3_STRTR'];
+                else if (curr_blk === 'DN_MAIN_APP')    sig_aspect = signalAspects['DN_HOME_M'];
+                else if (curr_blk === 'DN_BANG_APP')    sig_aspect = signalAspects['DN_HOME_B'];
+                else if (curr_blk === 'DN_CIRC_APP')    sig_aspect = signalAspects['DN_HOME_C'];
+                else if (curr_blk === 'P2_TRK')         sig_aspect = signalAspects['P2_STRTR'];
+                else if (curr_blk === 'P4_TRK')         sig_aspect = signalAspects['P4_STRTR'];
+                else if (curr_blk === 'P5_TRK')         sig_aspect = signalAspects['P5_STRTR'];
 
-                // Advanced Block Gating System (Prevents tail-end collisions smoothly)
-                if (train.progress >= 0.88) {
-                    let isHeld = false;
-                    if (curSeg === 'SEAL_UP_M' && signals['S1_HOME'] === 'RED') isHeld = true;
-                    if (curSeg === 'SEAL_UP_C' && signals['S3_HOME'] === 'RED') isHeld = true;
-                    if (curSeg === 'P1_TRK' && signals['S5_STRTR'] === 'RED') isHeld = true;
-                    if (curSeg === 'P3_TRK' && signals['S7_STRTR'] === 'RED') isHeld = true;
-                    if (curSeg === 'P5_TRK' && signals['S9_STRTR'] === 'RED') isHeld = true;
-                    
-                    if (curSeg === 'IN_MAIN' && signals['S2_DN_HOME'] === 'RED') isHeld = true;
-                    if (curSeg === 'IN_CHORD' && signals['S4_DN_HOME'] === 'RED') isHeld = true;
-                    if (curSeg === 'IN_BANG' && signals['S6_DN_HOME'] === 'RED') isHeld = true;
-                    if (curSeg === 'P2_TRK' && signals['S8_DN_STRTR'] === 'RED') isHeld = true;
-                    if (curSeg === 'P4_TRK' && signals['S10_DN_STRTR'] === 'RED') isHeld = true;
-
-                    if (isHeld) {
-                        train.progress = 0.88; // Decelerates smoothly to signal footprint boundary
-                        continue;
+                // Fail-safe Braking Loop Stop boundary at 0.82 to avoid overlap visual bugs
+                if (sig_aspect === 'RED') {
+                    if (t.progress >= 0.50) {
+                        let dist = 0.82 - t.progress;
+                        if (dist > 0) {
+                            t.current_speed = t.max_speed * (dist / 0.32);
+                        } else {
+                            t.current_speed = 0.0;
+                            t.progress = 0.82;
+                        }
+                        if (t.progress >= 0.82) {
+                            t.progress = 0.82;
+                            t.current_speed = 0.0;
+                            continue; 
+                        }
                     }
-                }
-
-                train.progress += train.speed;
-
-                // Track Boundary Transition Matrix
-                if (train.progress >= 1.0) {
-                    trackOccupancy[curSeg] = null; 
-                    train.currentSegmentIdx++;
-                    train.progress = 0.0;
-
-                    if (train.currentSegmentIdx >= train.segments.length) {
-                        addLog(`🏁 Train [${train.id}] cleared outer block territory.`);
-                        activeTrains.splice(i, 1);
-                        continue;
-                    }
-
-                    let nextSeg = train.segments[train.currentSegmentIdx];
-
-                    // Double-Check Block Interlocking Isolation
-                    if (trackOccupancy[nextSeg] !== null) {
-                        train.currentSegmentIdx--; 
-                        train.progress = 0.95;
-                        continue;
-                    }
-
-                    trackOccupancy[nextSeg] = train.id;
-
-                    // Platform Stop Triggering Rule
-                    if (nextSeg.includes('P1_TRK') || nextSeg.includes('P2_TRK') || 
-                        nextSeg.includes('P3_TRK') || nextSeg.includes('P4_TRK') || nextSeg.includes('P5_TRK')) {
-                        train.isStationDwell = true;
-                        addLog(`🚉 Train [${train.id}] berthed at platform loop circuit.`);
-                    }
-                }
-            }
-        }
-
-        function refreshPanelDisplays() {
-            signalsConfig.forEach(s => {
-                let color = '#dc2626'; 
-                if (signals[s.id] === 'GREEN') color = '#22c55e';
-                if (signals[s.id] === 'YELLOW') color = '#eab308';
-                
-                let el = document.getElementById("aspect-" + s.id);
-                if (el) el.setAttribute("fill", color);
-
-                let feather = document.getElementById("feather-" + s.id);
-                if (feather) {
-                    if (signals[s.id] !== 'RED') {
-                        feather.classList.add('active');
-                    } else {
-                        feather.classList.remove('active');
-                    }
-                }
-            });
-
-            for (let id in tracksData) {
-                let lineEl = document.getElementById("track-" + id);
-                if (!lineEl) continue;
-
-                if (trackOccupancy[id] !== null) {
-                    lineEl.setAttribute("class", "track occupied");
                 } else {
-                    let isLocked = false;
-                    if (id === 'OUT_MAIN' && signals['S5_STRTR'] !== 'RED') isLocked = true;
-                    if (id === 'DIV_CHORD' && signals['S7_STRTR'] !== 'RED') isLocked = true;
-                    if (id === 'DIV_BANG' && signals['S7_STRTR'] !== 'RED') isLocked = true;
-                    lineEl.setAttribute("class", isLocked ? "track locked" : "track");
+                    if (t.current_speed < t.max_speed) {
+                        t.current_speed += 0.003;
+                        if (t.current_speed > t.max_speed) t.current_speed = t.max_speed;
+                    }
+                }
+
+                t.progress += t.current_speed;
+
+                // Handle Platform Station Stops
+                if (t.state === 'RUNNING' && curr_blk.includes('P') && curr_blk.includes('_TRK')) {
+                    if (!t.has_berthed_here && t.progress >= 0.65) {
+                        t.state = 'BERTHED';
+                        t.dwell_counter = 0;
+                        t.has_berthed_here = true;
+                        t.current_speed = 0.0;
+                        logMessage(`🚉 Train ${t.id} berthed cleanly at platform section limits.`);
+                        continue;
+                    }
+                }
+
+                // Block-to-Block Handover routine
+                if (t.progress >= 1.0) {
+                    if (t.current_idx + 1 < t.route_path.length) {
+                        let next_blk = t.route_path[t.current_idx + 1];
+
+                        if (trackOccupancy[next_blk] === null) {
+                            trackOccupancy[curr_blk] = null;
+                            t.current_idx++;
+                            t.progress = 0.0;
+                            trackOccupancy[next_blk] = t.id;
+                            t.current_speed = t.max_speed;
+                            t.has_berthed_here = false;
+                        } else {
+                            t.progress = 0.82;
+                            t.current_speed = 0.0;
+                        }
+                    } else {
+                        trackOccupancy[curr_blk] = null;
+                        logMessage(`🏁 Train ${t.id} cleared track layout limits.`);
+                        activeTrains.splice(i, 1);
+                    }
                 }
             }
         }
 
-        function drawDynamicTrains() {
-            const layer = document.getElementById('trains-layer');
-            layer.innerHTML = '';
+        function getVectorCoordinates(points, progress) {
+            let totalSegments = points.length - 1;
+            let currentSeg = Math.min(letSegment = Math.floor(progress * totalSegments), totalSegments - 1);
+            let segmentProgress = (progress * totalSegments) - currentSeg;
 
-            activeTrains.forEach(train => {
-                let seg = train.segments[train.currentSegmentIdx];
-                let trackEl = document.getElementById("track-" + seg);
-                if (!trackEl) return;
+            let pA = points[currentSeg];
+            let pB = points[currentSeg + 1];
 
-                let totalLen = trackEl.getTotalLength();
-                let pointAt = trackEl.getPointAtLength(train.progress * totalLen);
+            return {
+                x: pA[0] + (pB[0] - pA[0]) * segmentProgress,
+                y: pA[1] + (pB[1] - pA[1]) * segmentProgress
+            };
+        }
 
-                let carG = document.createElementNS("http://www.w3.org/2000/svg", "g");
+        function renderCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-                let rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-                rect.setAttribute("x", pointAt.x - 26); rect.setAttribute("y", pointAt.y - 6);
-                rect.setAttribute("width", 52); rect.setAttribute("height", 12); rect.setAttribute("rx", 2);
-                rect.setAttribute("fill", train.dir === 'UP' ? '#0284c7' : '#db2777');
-                rect.setAttribute("stroke", '#ffffff'); rect.setAttribute("stroke-width", '1');
-                carG.appendChild(rect);
+            // Draw Base Layout Tracks
+            for (let block_id in TRACK_GEOMETRY) {
+                let pts = TRACK_GEOMETRY[block_id];
+                ctx.lineWidth = 4;
+                ctx.strokeStyle = trackOccupancy[block_id] ? "#dc2626" : "#334155";
+                ctx.beginPath();
+                ctx.moveTo(pts[0][0], pts[0][1]);
+                for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]);
+                ctx.stroke();
+            }
 
-                let txt = document.createElementNS("http://www.w3.org/2000/svg", "text");
-                txt.setAttribute("x", pointAt.x); txt.setAttribute("y", pointAt.y + 3);
-                txt.setAttribute("fill", "#ffffff"); txt.setAttribute("font-size", "8px"); txt.setAttribute("font-weight", "bold");
-                txt.setAttribute("text-anchor", "middle");
-                txt.textContent = train.id;
-                carG.appendChild(txt);
+            // Aesthetic Interlocking crossovers configurations 
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = "#1e293b";
+            ctx.beginPath(); ctx.moveTo(140, 200); ctx.lineTo(200, 100); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(140, 300); ctx.lineTo(200, 250); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(650, 200); ctx.lineTo(710, 150); ctx.stroke();
 
-                layer.appendChild(carG);
+            // Text Labels For Layout Channels
+            ctx.font = "bold 11px Courier New";
+            ctx.textAlign = "center";
+            ctx.fillStyle = "#38bdf8"; ctx.fillText("PLATFORM 1 [UP MAIN LINE]", 440, 82);
+            ctx.fillStyle = "#f43f5e"; ctx.fillText("PLATFORM 2 [DN MAIN LINE]", 440, 134);
+            ctx.fillStyle = "#38bdf8"; ctx.fillText("PLATFORM 3 [UP CHORD / BANGAON]", 440, 182);
+            ctx.fillStyle = "#f43f5e"; ctx.fillText("PLATFORM 4 [DN BANGAON / HASNABAD]", 440, 234);
+            ctx.fillStyle = "#f43f5e"; ctx.fillText("PLATFORM 5 [CIRCULAR RAIL]", 440, 282);
+
+            // Draw Signal Configurations 
+            SIGNALS_CONFIG.forEach(sig => {
+                let aspect = signalAspects[sig.id];
+                let color = (aspect === 'RED') ? '#dc2626' : (aspect === 'YELLOW' ? '#eab308' : '#22c55e');
+                let offset_y = 14 * sig.side;
+
+                // Signal Housing Base
+                ctx.fillStyle = "#000000";
+                ctx.strokeStyle = "#475569";
+                ctx.lineWidth = 1;
+                ctx.fillRect(sig.x - 5, sig.y + offset_y - 5, 10, 10);
+                ctx.strokeRect(sig.x - 5, sig.y + offset_y - 5, 10, 10);
+
+                // Lamp Aspect Circle
+                ctx.fillStyle = color;
+                ctx.beginPath();
+                ctx.arc(sig.x, sig.y + offset_y, 3, 0, 2 * Math.PI);
+                ctx.fill();
+
+                // Text Description
+                ctx.font = "bold 10px Courier New";
+                ctx.fillStyle = "#64748b";
+                ctx.fillText(sig.lbl, sig.x, sig.y + (offset_y * 2.3));
+            });
+
+            // Draw Moving Rolling Stock Consists
+            activeTrains.forEach(t => {
+                let pts = TRACK_GEOMETRY[t.route_path[t.current_idx]];
+                let pos = getVectorCoordinates(pts, t.progress);
+
+                ctx.fillStyle = (t.direction === 'UP') ? "#0284c7" : "#db2777";
+                ctx.strokeStyle = "#ffffff";
+                ctx.lineWidth = 1;
+                ctx.fillRect(pos.x - 20, pos.y - 7, 40, 14);
+                ctx.strokeRect(pos.x - 20, pos.y - 7, 40, 14);
+
+                ctx.font = "bold 9px Courier New";
+                ctx.fillStyle = "#ffffff";
+                ctx.fillText(t.id, pos.x, pos.y + 3);
             });
         }
 
-        function emergencyAllRed() {
-            signalsConfig.forEach(s => { signals[s.id] = 'RED'; });
-            activeTrains.forEach(t => t.speed = 0);
-            addLog("🚨 SYSTEM LOCKOUT: Emergency stop commanded instantly from CTC console.");
+        function systemLoop() {
+            clockTicks++;
+            // Automatic random scheduling injector loop
+            if (clockTicks % 120 === 0) {
+                let d = Math.random() > 0.5 ? 'UP' : 'DOWN';
+                let p = (d === 'UP') ? (Math.random() > 0.5 ? 'P1' : 'P3') : (Math.random() > 0.6 ? 'P2' : (Math.random() > 0.5 ? 'P4' : 'P5'));
+                injectTrain(d, p);
+            }
+
+            evaluateInterlocking();
+            updateTrainPositions();
+            renderCanvas();
+            requestAnimationFrame(systemLoop);
         }
 
-        function hardResetPanel() {
-            initSystem();
-            addLog("🧹 Complete infrastructure track clear executed.");
-        }
-
-        function addLog(msg) {
-            let time = new Date().toLocaleTimeString();
-            logBuffer.unshift({t: time, m: msg});
-            if (logBuffer.length > 25) logBuffer.pop();
-
-            let container = document.getElementById('sys-logs');
-            container.innerHTML = '';
-            logBuffer.forEach(l => {
-                container.innerHTML += `<div class="log-entry"><span class="log-time">[${l.t}]</span> ${l.m}</div>`;
-            });
-        }
+        // Start Web Simulation Runtime
+        requestAnimationFrame(systemLoop);
     </script>
 </body>
 </html>
