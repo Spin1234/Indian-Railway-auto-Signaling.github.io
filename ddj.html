@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dum Dum Jn. - Electronic Interlocking Web Panel</title>
+    <title>Dum Dum Jn. - Indian Railways Multi-Aspect Interlocking Panel</title>
     <style>
         :root {
             --bg-main: #090d16;
@@ -11,6 +11,7 @@
             --bg-control: #131824;
             --btn-bg: #1e293b;
             --btn-hover: #334155;
+            --btn-active: #0284c7;
             --text-cyan: #38bdf8;
             --text-green: #22c55e;
             --text-rose: #f43f5e;
@@ -26,41 +27,46 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            padding: 20px;
-            overflow-x: hidden;
+            padding: 10px;
+            min-height: 100vh;
         }
 
         h2 {
             color: var(--text-cyan);
-            margin-bottom: 15px;
-            font-size: 1.3rem;
+            margin: 10px 0;
+            font-size: 1.1rem;
             font-weight: bold;
             text-align: center;
             letter-spacing: 1px;
         }
 
-        #panel-container {
-            width: 1110px;
+        #panel-wrapper {
+            width: 100%;
+            max-width: 1200px;
             background-color: var(--bg-panel);
             border: 2px solid #1e293b;
             border-radius: 6px;
+            overflow-x: auto; /* Allows smooth horizontal scrolling on small screens */
             box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.7);
-            position: relative;
+            -webkit-overflow-scrolling: touch;
         }
 
         canvas {
             display: block;
             background-color: var(--bg-panel);
+            min-width: 1150px; /* Maintains full tracking grid integrity */
         }
 
         #control-bar {
-            width: 1110px;
+            width: 100%;
+            max-width: 1200px;
             background-color: var(--bg-control);
             border: 1px solid #1e293b;
             border-radius: 4px;
-            margin-top: 15px;
+            margin-top: 10px;
             padding: 12px;
             display: flex;
+            flex-direction: row;
             align-items: center;
             gap: 10px;
             flex-wrap: wrap;
@@ -68,22 +74,27 @@
 
         .panel-label {
             color: #94a3b8;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             font-weight: bold;
-            margin-right: 5px;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
         }
 
         button {
             background-color: var(--btn-bg);
             color: #ffffff;
             border: 1px solid #475569;
-            padding: 8px 14px;
+            padding: 8px 12px;
             font-family: inherit;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             font-weight: bold;
             cursor: pointer;
             border-radius: 4px;
-            transition: background 0.2s, border-color 0.2s;
+            transition: all 0.2s ease;
         }
 
         button:hover {
@@ -91,41 +102,65 @@
             border-color: var(--text-cyan);
         }
 
+        button.toggle-active {
+            background-color: #b91c1c;
+            border-color: #f87171;
+        }
+
+        button.toggle-active.running {
+            background-color: #15803d;
+            border-color: #4ade80;
+        }
+
         #logger-container {
-            width: 1110px;
-            margin-top: 15px;
+            width: 100%;
+            max-width: 1200px;
+            margin-top: 10px;
         }
 
         #log-box {
             width: 100%;
-            height: 140px;
+            height: 120px;
             background-color: var(--bg-panel);
             border: 1px solid #1e293b;
             border-radius: 4px;
             padding: 10px;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             color: var(--text-green);
             overflow-y: auto;
             white-space: pre-wrap;
             line-height: 1.4;
         }
+
+        @media (max-width: 768px) {
+            h2 { font-size: 0.95rem; }
+            #control-bar { flex-direction: column; align-items: flex-start; }
+            .btn-group { width: 100%; }
+            button { flex-grow: 1; text-align: center; padding: 10px; }
+        }
     </style>
 </head>
 <body>
 
-    <h2>DUM DUM JUNCTION AUTOMATIC SYSTEMS PANEL - FAIL SAFE WEB RRI</h2>
+    <h2>DUM DUM JN. AUTOMATIC SYSTEMS PANEL - 3-ASPECT MULTI-STAGE IR INTERLOCKING</h2>
 
-    <div id="panel-container">
-        <canvas id="paintArea" width="1110" height="380"></canvas>
+    <div id="panel-wrapper">
+        <canvas id="paintArea" width="1150" height="380"></canvas>
     </div>
 
     <div id="control-bar">
-        <span class="panel-label">CTC OPERATION PANEL:</span>
-        <button onclick="injectTrain('UP', 'P1')">Inject P1 (Up Main)</button>
-        <button onclick="injectTrain('UP', 'P3')">Inject P3 (Up Chord)</button>
-        <button onclick="injectTrain('DOWN', 'P2')">Inject P2 (Dn Main)</button>
-        <button onclick="injectTrain('DOWN', 'P4')">Inject P4 (Dn Bangaon)</button>
-        <button onclick="injectTrain('DOWN', 'P5')">Inject P5 (Dn Circular)</button>
+        <div>
+            <span class="panel-label">AI AUTO-DISPATCHER:</span>
+            <button id="aiToggle" class="toggle-active running" onclick="toggleAI()">AI: ACTIVE</button>
+        </div>
+        <div class="btn-group">
+            <span class="panel-label" style="display:block; width:100%; margin-bottom:2px;">MANUAL DESPATCH:</span>
+            <button onclick="injectTrain('UP', 'P1')">+ UP MAIN (P1)</button>
+            <button onclick="injectTrain('UP', 'P3')">+ UP CHORD (P3)</button>
+            <button onclick="injectTrain('DOWN', 'P2')">+ DN MAIN (P2)</button>
+            <button onclick="injectTrain('DOWN', 'P4')">+ DN BANG (P4)</button>
+            <button onclick="injectTrain('DOWN', 'P5')">+ DN CIRC (P5)</button>
+        </div>
     </div>
 
     <div id="logger-container">
@@ -136,53 +171,84 @@
         const canvas = document.getElementById('paintArea');
         const ctx = canvas.getContext('2d');
         const logBox = document.getElementById('log-box');
+        const aiToggleBtn = document.getElementById('aiToggle');
+
+        let aiAutomationEnabled = true;
 
         // =================================================================
-        // FIXED ELECTRONIC INTERLOCKING GEOMETRY (ALL 5 PANEL PLATFORMS)
+        // EXTENDED MULTI-STAGE TRACK SECTOR GEOMETRY (INDIAN RAILWAYS MODEL)
         // =================================================================
         const TRACK_GEOMETRY = {
-            'SEAL_UP_APP':      [[30, 100], [200, 100]],    
-            'P1_TRK':           [[200, 100], [650, 100]],   
-            'MAIN_LINE_OUT':    [[650, 100], [1050, 100]],  
+            // UP Lines (Traffic Left -> Right)
+            'UP_DISTANT_BLOCK': [[30, 100], [150, 100]],    // Distant warning sector
+            'UP_OUTER_BLOCK':   [[150, 100], [300, 100]],   // Home outer block
+            'UP_ROUTING_BLOCK': [[300, 100], [420, 100]],   // Routing Home holding bay
+            'P1_TRK':           [[420, 100], [780, 100]],   // Platform 1 Main
+            'MAIN_LINE_OUT':    [[780, 100], [1120, 100]],  // Advance Section Out
 
-            'SEAL_CHORD_APP':   [[30, 200], [200, 200]],    
-            'P3_TRK':           [[200, 200], [650, 200]],   
-            'CHORD_LINE_OUT':   [[650, 200], [760, 200], [820, 160], [1050, 160]],
+            'CHORD_DISTANT':    [[30, 200], [150, 200]],
+            'CHORD_OUTER':      [[150, 200], [300, 200]],
+            'CHORD_ROUTING':    [[300, 200], [420, 200]],
+            'P3_TRK':           [[420, 200], [780, 200]],   // Platform 3 Chord
+            'CHORD_LINE_OUT':   [[780, 200], [880, 200], [940, 160], [1120, 160]],
 
-            'DN_MAIN_APP':      [[1050, 150], [700, 150]],  
-            'P2_TRK':           [[700, 150], [250, 150]],   
-            'SEAL_MAIN_DN_OUT': [[250, 150], [30, 150]],    
+            // DOWN Lines (Traffic Right -> Left)
+            'DN_M_DISTANT':     [[1120, 150], [1000, 150]],
+            'DN_M_OUTER':       [[1000, 150], [850, 150]],
+            'DN_M_ROUTING':     [[850, 150], [730, 150]],
+            'P2_TRK':           [[730, 150], [370, 150]],   // Platform 2 Main
+            'SEAL_MAIN_DN_OUT': [[370, 150], [30, 150]],
 
-            'DN_BANG_APP':      [[1050, 250], [700, 250]],  
-            'P4_TRK':           [[700, 250], [250, 250]],   
-            'SEAL_BANG_DN_OUT': [[250, 250], [30, 250]],    
+            'DN_B_DISTANT':     [[1120, 250], [1000, 250]],
+            'DN_B_OUTER':       [[1000, 250], [850, 250]],
+            'DN_B_ROUTING':     [[850, 250], [730, 250]],
+            'P4_TRK':           [[730, 250], [370, 250]],   // Platform 4 Bangaon
+            'SEAL_BANG_DN_OUT': [[370, 250], [30, 250]],
 
-            'DN_CIRC_APP':      [[1050, 300], [700, 300]],  
-            'P5_TRK':           [[700, 300], [250, 300]],   
-            'CIRCULAR_DN_OUT':  [[250, 300], [30, 300]]     
+            'DN_C_DISTANT':     [[1120, 310], [1000, 310]],
+            'DN_C_OUTER':       [[1000, 310], [850, 310]],
+            'DN_C_ROUTING':     [[850, 310], [730, 310]],
+            'P5_TRK':           [[730, 310], [370, 310]],   // Platform 5 Circular
+            'CIRCULAR_DN_OUT':  [[370, 310], [30, 310]]
         };
 
+        // =================================================================
+        // SIGNAL MODULE CONFIGURATIONS (3-ASPECT MULTI-LENS RIGS)
+        // =================================================================
         const SIGNALS_CONFIG = [
-            {id: 'S1_HOME',   track: 'SEAL_UP_APP',      x: 200, y: 100, lbl: 'S1-HOME',    side: -1},
-            {id: 'S3_HOME',   track: 'SEAL_CHORD_APP',   x: 200, y: 200, lbl: 'S3-HOME',    side: -1},
-            {id: 'P1_STRTR',  track: 'P1_TRK',           x: 650, y: 100, lbl: 'P1-STRTR',   side: -1},
-            {id: 'P3_STRTR',  track: 'P3_TRK',           x: 650, y: 200, lbl: 'P3-STRTR',   side: -1},
-            
-            {id: 'DN_HOME_M', track: 'DN_MAIN_APP',      x: 700, y: 150, lbl: 'DN-HOME-M',  side: 1},
-            {id: 'DN_HOME_B', track: 'DN_BANG_APP',      x: 700, y: 250, lbl: 'DN-HOME-B',  side: 1},
-            {id: 'DN_HOME_C', track: 'DN_CIRC_APP',      x: 700, y: 300, lbl: 'DN-HOME-C',  side: 1},
-            {id: 'P2_STRTR',  track: 'P2_TRK',           x: 250, y: 150, lbl: 'P2-STRTR',   side: 1},
-            {id: 'P4_STRTR',  track: 'P4_TRK',           x: 250, y: 250, lbl: 'P4-STRTR',   side: 1},
-            {id: 'P5_STRTR',  track: 'P5_TRK',           x: 250, y: 300, lbl: 'P5-STRTR',   side: 1}
+            // UP Signals (Facing Right, offset upwards)
+            {id: 'S1_DIST',    track: 'UP_DISTANT_BLOCK',  x: 150, y: 100, lbl: 'UP-DS',    side: -1},
+            {id: 'S1_HOME',    track: 'UP_OUTER_BLOCK',    x: 300, y: 100, lbl: 'UP-HS',    side: -1},
+            {id: 'S1_ROUTING', track: 'UP_ROUTING_BLOCK',  x: 420, y: 100, lbl: 'UP-RHS',   side: -1},
+            {id: 'P1_STRTR',   track: 'P1_TRK',            x: 780, y: 100, lbl: 'P1-STRTR',  side: -1},
+
+            {id: 'S3_DIST',    track: 'CHORD_DISTANT',     x: 150, y: 200, lbl: 'CH-DS',    side: -1},
+            {id: 'S3_HOME',    track: 'CHORD_OUTER',       x: 300, y: 200, lbl: 'CH-HS',    side: -1},
+            {id: 'S3_ROUTING', track: 'CHORD_ROUTING',     x: 420, y: 200, lbl: 'CH-RHS',   side: -1},
+            {id: 'P3_STRTR',   track: 'P3_TRK',            x: 780, y: 200, lbl: 'P3-STRTR',  side: -1},
+
+            // DOWN Signals (Facing Left, offset downwards)
+            {id: 'DN_M_DS',    track: 'DN_M_DISTANT',      x: 100, y: 150, lbl: 'DN_M-DS',  side: 1},
+            {id: 'DN_M_HS',    track: 'DN_M_OUTER',        x: 850, y: 150, lbl: 'DN_M-HS',  side: 1},
+            {id: 'DN_M_RHS',   track: 'DN_M_ROUTING',      x: 730, y: 150, lbl: 'DN_M-RHS', side: 1},
+            {id: 'P2_STRTR',   track: 'P2_TRK',            x: 370, y: 150, lbl: 'P2-STRTR',  side: 1},
+
+            {id: 'DN_B_DS',    track: 'DN_B_DISTANT',      x: 100, y: 250, lbl: 'DN_B-DS',  side: 1},
+            {id: 'DN_B_HS',    track: 'DN_B_OUTER',        x: 850, y: 250, lbl: 'DN_B-HS',  side: 1},
+            {id: 'DN_B_RHS',   track: 'DN_B_ROUTING',      x: 730, y: 250, lbl: 'DN_B-RHS', side: 1},
+            {id: 'P4_STRTR',   track: 'P4_TRK',            x: 370, y: 250, lbl: 'P4-STRTR',  side: 1},
+
+            {id: 'DN_C_DS',    track: 'DN_C_DISTANT',      x: 100, y: 310, lbl: 'DN_C-DS',  side: 1},
+            {id: 'DN_C_HS',    track: 'DN_C_OUTER',        x: 850, y: 310, lbl: 'DN_C-HS',  side: 1},
+            {id: 'DN_C_RHS',   track: 'DN_C_ROUTING',      x: 730, y: 310, lbl: 'DN_C-RHS', side: 1},
+            {id: 'P5_STRTR',   track: 'P5_TRK',            x: 370, y: 310, lbl: 'P5-STRTR',  side: 1}
         ];
 
-        // Panel System Variables
         let trackOccupancy = {};
         let signalAspects = {};
         let activeTrains = [];
         let clockTicks = 0;
 
-        // Initialize tracking maps
         for (let key in TRACK_GEOMETRY) trackOccupancy[key] = null;
         SIGNALS_CONFIG.forEach(s => signalAspects[s.id] = 'RED');
 
@@ -191,49 +257,82 @@
             logBox.scrollTop = logBox.scrollHeight;
         }
 
-        logMessage("INTERLOCKING REGISTER ENGAGED: Web-based relay system synchronized.");
+        function toggleAI() {
+            aiAutomationEnabled = !aiAutomationEnabled;
+            if (aiAutomationEnabled) {
+                aiToggleBtn.className = "toggle-active running";
+                aiToggleBtn.innerText = "AI: ACTIVE";
+                logMessage("🤖 Automatic AI background dispatcher resumed.");
+            } else {
+                aiToggleBtn.className = "toggle-active";
+                aiToggleBtn.innerText = "AI: STOPPED";
+                logMessage("🛑 AI background system frozen. Manual dispatching online.");
+            }
+        }
+
+        logMessage("SYSTEM INTERLOCKING ENGAGED: Multi-stage block circuitry online.");
 
         function injectTrain(direction, platform) {
             let path = [];
             if (direction === 'UP') {
-                path = (platform === 'P1') ? ['SEAL_UP_APP', 'P1_TRK', 'MAIN_LINE_OUT'] : ['SEAL_CHORD_APP', 'P3_TRK', 'CHORD_LINE_OUT'];
+                path = (platform === 'P1') 
+                    ? ['UP_DISTANT_BLOCK', 'UP_OUTER_BLOCK', 'UP_ROUTING_BLOCK', 'P1_TRK', 'MAIN_LINE_OUT']
+                    : ['CHORD_DISTANT', 'CHORD_OUTER', 'CHORD_ROUTING', 'P3_TRK', 'CHORD_LINE_OUT'];
             } else {
-                if (platform === 'P2') path = ['DN_MAIN_APP', 'P2_TRK', 'SEAL_MAIN_DN_OUT'];
-                else if (platform === 'P4') path = ['DN_BANG_APP', 'P4_TRK', 'SEAL_BANG_DN_OUT'];
-                else path = ['DN_CIRC_APP', 'P5_TRK', 'CIRCULAR_DN_OUT'];
+                if (platform === 'P2') path = ['DN_M_DISTANT', 'DN_M_OUTER', 'DN_M_ROUTING', 'P2_TRK', 'SEAL_MAIN_DN_OUT'];
+                else if (platform === 'P4') path = ['DN_B_DISTANT', 'DN_B_OUTER', 'DN_B_ROUTING', 'P4_TRK', 'SEAL_BANG_DN_OUT'];
+                else path = ['DN_C_DISTANT', 'DN_C_OUTER', 'DN_C_ROUTING', 'P5_TRK', 'CIRCULAR_DN_OUT'];
             }
 
             if (trackOccupancy[path[0]] !== null) {
-                logMessage(`❌ INJECTION BLOCKED: Approach section ${path[0]} occupied.`);
+                logMessage(`❌ CMD REFUSED: Approach block ${path[0]} occupied.`);
                 return;
             }
 
-            let t_id = `${platform.startsWith('P1') || platform.startsWith('P2') ? 'EXP' : 'EMU'}-${Math.floor(100 + Math.random() * 899)}`;
+            let t_id = `${platform.startsWith('P1') || platform.startsWith('P2') ? 'EXP' : 'EMU'}-${Math.floor(200 + Math.random() * 799)}`;
             let newTrain = {
                 id: t_id, direction: direction, route_path: path,
-                current_idx: 0, progress: 0.0, current_speed: 0.02, max_speed: 0.02,
+                current_idx: 0, progress: 0.0, current_speed: 0.025, max_speed: 0.025,
                 state: 'RUNNING', dwell_counter: 0, has_berthed_here: false
             };
 
             activeTrains.push(newTrain);
             trackOccupancy[path[0]] = t_id;
-            logMessage(`🟢 Despatched train ${t_id} into layout boundary.`);
+            logMessage(`🟢 Despatched train ${t_id} at line outer limits.`);
         }
 
         function evaluateInterlocking() {
-            // UP Logic
-            signalAspects['S1_HOME'] = trackOccupancy['P1_TRK'] ? 'RED' : 'GREEN';
-            signalAspects['P1_STRTR'] = trackOccupancy['MAIN_LINE_OUT'] ? 'RED' : 'GREEN';
-            signalAspects['S3_HOME'] = trackOccupancy['P3_TRK'] ? 'RED' : 'YELLOW';
-            signalAspects['P3_STRTR'] = trackOccupancy['CHORD_LINE_OUT'] ? 'RED' : 'GREEN';
+            // Precise 3-Aspect Cascade Logic (Red -> Yellow -> Green based on block track clearances)
             
-            // DOWN Logic
-            signalAspects['DN_HOME_M'] = trackOccupancy['P2_TRK'] ? 'RED' : 'GREEN';
-            signalAspects['P2_STRTR'] = trackOccupancy['SEAL_MAIN_DN_OUT'] ? 'RED' : 'GREEN';
-            signalAspects['DN_HOME_B'] = trackOccupancy['P4_TRK'] ? 'RED' : 'YELLOW';
-            signalAspects['P4_STRTR'] = trackOccupancy['SEAL_BANG_DN_OUT'] ? 'RED' : 'GREEN';
-            signalAspects['DN_HOME_C'] = trackOccupancy['P5_TRK'] ? 'RED' : 'GREEN';
-            signalAspects['P5_STRTR'] = trackOccupancy['CIRCULAR_DN_OUT'] ? 'RED' : 'GREEN';
+            // --- UP MAIN (P1) ---
+            signalAspects['P1_STRTR']   = trackOccupancy['MAIN_LINE_OUT'] ? 'RED' : 'GREEN';
+            signalAspects['S1_ROUTING'] = trackOccupancy['P1_TRK'] ? 'RED' : (signalAspects['P1_STRTR'] === 'RED' ? 'YELLOW' : 'GREEN');
+            signalAspects['S1_HOME']    = trackOccupancy['UP_ROUTING_BLOCK'] ? 'RED' : (signalAspects['S1_ROUTING'] === 'RED' ? 'YELLOW' : 'GREEN');
+            signalAspects['S1_DIST']    = trackOccupancy['UP_OUTER_BLOCK'] ? 'RED' : (signalAspects['S1_HOME'] === 'RED' ? 'YELLOW' : 'GREEN');
+
+            // --- UP CHORD (P3) ---
+            signalAspects['P3_STRTR']   = trackOccupancy['CHORD_LINE_OUT'] ? 'RED' : 'GREEN';
+            signalAspects['S3_ROUTING'] = trackOccupancy['P3_TRK'] ? 'RED' : (signalAspects['P3_STRTR'] === 'RED' ? 'YELLOW' : 'GREEN');
+            signalAspects['S3_HOME']    = trackOccupancy['CHORD_ROUTING'] ? 'RED' : (signalAspects['S3_ROUTING'] === 'RED' ? 'YELLOW' : 'GREEN');
+            signalAspects['S3_DIST']    = trackOccupancy['CHORD_OUTER'] ? 'RED' : (signalAspects['S3_HOME'] === 'RED' ? 'YELLOW' : 'GREEN');
+
+            // --- DN MAIN (P2) ---
+            signalAspects['P2_STRTR']   = trackOccupancy['SEAL_MAIN_DN_OUT'] ? 'RED' : 'GREEN';
+            signalAspects['DN_M_RHS']   = trackOccupancy['P2_TRK'] ? 'RED' : (signalAspects['P2_STRTR'] === 'RED' ? 'YELLOW' : 'GREEN');
+            signalAspects['DN_M_HS']    = trackOccupancy['DN_M_ROUTING'] ? 'RED' : (signalAspects['DN_M_RHS'] === 'RED' ? 'YELLOW' : 'GREEN');
+            signalAspects['DN_M_DS']    = trackOccupancy['DN_M_OUTER'] ? 'RED' : (signalAspects['DN_M_HS'] === 'RED' ? 'YELLOW' : 'GREEN');
+
+            // --- DN BANGAON (P4) ---
+            signalAspects['P4_STRTR']   = trackOccupancy['SEAL_BANG_DN_OUT'] ? 'RED' : 'GREEN';
+            signalAspects['DN_B_RHS']   = trackOccupancy['P4_TRK'] ? 'RED' : (signalAspects['P4_STRTR'] === 'RED' ? 'YELLOW' : 'GREEN');
+            signalAspects['DN_B_HS']    = trackOccupancy['DN_B_ROUTING'] ? 'RED' : (signalAspects['DN_B_RHS'] === 'RED' ? 'YELLOW' : 'GREEN');
+            signalAspects['DN_B_DS']    = trackOccupancy['DN_B_OUTER'] ? 'RED' : (signalAspects['DN_B_HS'] === 'RED' ? 'YELLOW' : 'GREEN');
+
+            // --- DN CIRCULAR (P5) ---
+            signalAspects['P5_STRTR']   = trackOccupancy['CIRCULAR_DN_OUT'] ? 'RED' : 'GREEN';
+            signalAspects['DN_C_RHS']   = trackOccupancy['P5_TRK'] ? 'RED' : (signalAspects['P5_STRTR'] === 'RED' ? 'YELLOW' : 'GREEN');
+            signalAspects['DN_C_HS']    = trackOccupancy['DN_C_ROUTING'] ? 'RED' : (signalAspects['DN_C_RHS'] === 'RED' ? 'YELLOW' : 'GREEN');
+            signalAspects['DN_C_DS']    = trackOccupancy['DN_C_OUTER'] ? 'RED' : (signalAspects['DN_C_HS'] === 'RED' ? 'YELLOW' : 'GREEN');
         }
 
         function updateTrainPositions() {
@@ -244,32 +343,46 @@
                 if (t.state === 'BERTHED') {
                     t.dwell_counter++;
                     t.current_speed = 0.0;
-                    if (t.dwell_counter >= 80) {
+                    if (t.dwell_counter >= 75) {
                         t.state = 'RUNNING';
-                        logMessage(`🔔 Train ${t.id} finished boarding. Seeking departure route aspect.`);
+                        logMessage(`🔔 Train ${t.id} boarding complete. Seeking departure clearance.`);
                     }
                     continue;
                 }
 
-                // Associate matching block protecting signal
-                let sig_aspect = 'GREEN';
-                if (curr_blk === 'SEAL_UP_APP')      sig_aspect = signalAspects['S1_HOME'];
-                else if (curr_blk === 'SEAL_CHORD_APP') sig_aspect = signalAspects['S3_HOME'];
-                else if (curr_blk === 'P1_TRK')         sig_aspect = signalAspects['P1_STRTR'];
-                else if (curr_blk === 'P3_TRK')         sig_aspect = signalAspects['P3_STRTR'];
-                else if (curr_blk === 'DN_MAIN_APP')    sig_aspect = signalAspects['DN_HOME_M'];
-                else if (curr_blk === 'DN_BANG_APP')    sig_aspect = signalAspects['DN_HOME_B'];
-                else if (curr_blk === 'DN_CIRC_APP')    sig_aspect = signalAspects['DN_HOME_C'];
-                else if (curr_blk === 'P2_TRK')         sig_aspect = signalAspects['P2_STRTR'];
-                else if (curr_blk === 'P4_TRK')         sig_aspect = signalAspects['P4_STRTR'];
-                else if (curr_blk === 'P5_TRK')         sig_aspect = signalAspects['P5_STRTR'];
+                // Dynamic Signal Lookup for end boundary of active block segment
+                let aspect = 'GREEN';
+                if (curr_blk === 'UP_DISTANT_BLOCK') aspect = signalAspects['S1_DIST'];
+                else if (curr_blk === 'UP_OUTER_BLOCK')   aspect = signalAspects['S1_HOME'];
+                else if (curr_blk === 'UP_ROUTING_BLOCK') aspect = signalAspects['S1_ROUTING'];
+                else if (curr_blk === 'P1_TRK')           aspect = signalAspects['P1_STRTR'];
+                
+                else if (curr_blk === 'CHORD_DISTANT') aspect = signalAspects['S3_DIST'];
+                else if (curr_blk === 'CHORD_OUTER')   aspect = signalAspects['S3_HOME'];
+                else if (curr_blk === 'CHORD_ROUTING') aspect = signalAspects['S3_ROUTING'];
+                else if (curr_blk === 'P3_TRK')        aspect = signalAspects['P3_STRTR'];
 
-                // Fail-safe Braking Loop Stop boundary at 0.82 to avoid overlap visual bugs
-                if (sig_aspect === 'RED') {
-                    if (t.progress >= 0.50) {
-                        let dist = 0.82 - t.progress;
-                        if (dist > 0) {
-                            t.current_speed = t.max_speed * (dist / 0.32);
+                else if (curr_blk === 'DN_M_DISTANT') aspect = signalAspects['DN_M_DS'];
+                else if (curr_blk === 'DN_M_OUTER')   aspect = signalAspects['DN_M_HS'];
+                else if (curr_blk === 'DN_M_ROUTING') aspect = signalAspects['DN_M_RHS'];
+                else if (curr_blk === 'P2_TRK')       aspect = signalAspects['P2_STRTR'];
+
+                else if (curr_blk === 'DN_B_DISTANT') aspect = signalAspects['DN_B_DS'];
+                else if (curr_blk === 'DN_B_OUTER')   aspect = signalAspects['DN_B_HS'];
+                else if (curr_blk === 'DN_B_ROUTING') aspect = signalAspects['DN_B_RHS'];
+                else if (curr_blk === 'P4_TRK')       aspect = signalAspects['P4_STRTR'];
+
+                else if (curr_blk === 'DN_C_DISTANT') aspect = signalAspects['DN_C_DS'];
+                else if (curr_blk === 'DN_C_OUTER')   aspect = signalAspects['DN_C_HS'];
+                else if (curr_blk === 'DN_C_ROUTING') aspect = signalAspects['DN_C_RHS'];
+                else if (curr_blk === 'P5_TRK')       aspect = signalAspects['P5_STRTR'];
+
+                // Adaptive Braking System Configuration
+                if (aspect === 'RED') {
+                    if (t.progress >= 0.40) {
+                        let distanceToTarget = 0.82 - t.progress;
+                        if (distanceToTarget > 0) {
+                            t.current_speed = t.max_speed * (distanceToTarget / 0.42);
                         } else {
                             t.current_speed = 0.0;
                             t.progress = 0.82;
@@ -277,31 +390,33 @@
                         if (t.progress >= 0.82) {
                             t.progress = 0.82;
                             t.current_speed = 0.0;
-                            continue; 
+                            continue;
                         }
                     }
-                } else {
-                    if (t.current_speed < t.max_speed) {
-                        t.current_speed += 0.003;
-                        if (t.current_speed > t.max_speed) t.current_speed = t.max_speed;
+                } else if (aspect === 'YELLOW') {
+                    // Cautious slow running profile for intermediate aspects
+                    if (t.current_speed > t.max_speed * 0.5) {
+                        t.current_speed -= 0.001;
                     }
+                } else {
+                    if (t.current_speed < t.max_speed) t.current_speed += 0.002;
                 }
 
                 t.progress += t.current_speed;
 
-                // Handle Platform Station Stops
+                // Station Platform limits check
                 if (t.state === 'RUNNING' && curr_blk.includes('P') && curr_blk.includes('_TRK')) {
-                    if (!t.has_berthed_here && t.progress >= 0.65) {
+                    if (!t.has_berthed_here && t.progress >= 0.60) {
                         t.state = 'BERTHED';
                         t.dwell_counter = 0;
                         t.has_berthed_here = true;
                         t.current_speed = 0.0;
-                        logMessage(`🚉 Train ${t.id} berthed cleanly at platform section limits.`);
+                        logMessage(`🚉 Train ${t.id} berthed at platform station.`);
                         continue;
                     }
                 }
 
-                // Block-to-Block Handover routine
+                // Block-to-Block Handover Protocol
                 if (t.progress >= 1.0) {
                     if (t.current_idx + 1 < t.route_path.length) {
                         let next_blk = t.route_path[t.current_idx + 1];
@@ -319,7 +434,7 @@
                         }
                     } else {
                         trackOccupancy[curr_blk] = null;
-                        logMessage(`🏁 Train ${t.id} cleared track layout limits.`);
+                        logMessage(`🏁 Train ${t.id} left layout block systems.`);
                         activeTrains.splice(i, 1);
                     }
                 }
@@ -328,12 +443,10 @@
 
         function getVectorCoordinates(points, progress) {
             let totalSegments = points.length - 1;
-            let currentSeg = Math.min(letSegment = Math.floor(progress * totalSegments), totalSegments - 1);
+            let currentSeg = Math.min(Math.floor(progress * totalSegments), totalSegments - 1);
             let segmentProgress = (progress * totalSegments) - currentSeg;
-
             let pA = points[currentSeg];
             let pB = points[currentSeg + 1];
-
             return {
                 x: pA[0] + (pB[0] - pA[0]) * segmentProgress,
                 y: pA[1] + (pB[1] - pA[1]) * segmentProgress
@@ -343,7 +456,7 @@
         function renderCanvas() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Draw Base Layout Tracks
+            // 1. Draw Linear Track Grids
             for (let block_id in TRACK_GEOMETRY) {
                 let pts = TRACK_GEOMETRY[block_id];
                 ctx.lineWidth = 4;
@@ -354,48 +467,56 @@
                 ctx.stroke();
             }
 
-            // Aesthetic Interlocking crossovers configurations 
+            // Draw turnout crossover connection rails
             ctx.lineWidth = 2;
             ctx.strokeStyle = "#1e293b";
-            ctx.beginPath(); ctx.moveTo(140, 200); ctx.lineTo(200, 100); ctx.stroke();
-            ctx.beginPath(); ctx.moveTo(140, 300); ctx.lineTo(200, 250); ctx.stroke();
-            ctx.beginPath(); ctx.moveTo(650, 200); ctx.lineTo(710, 150); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(300, 200); ctx.lineTo(420, 100); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(300, 310); ctx.lineTo(420, 250); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(780, 200); ctx.lineTo(850, 150); ctx.stroke();
 
-            // Text Labels For Layout Channels
-            ctx.font = "bold 11px Courier New";
+            // 2. Station Metadata Overlay Text
+            ctx.font = "bold 10px Courier New";
             ctx.textAlign = "center";
-            ctx.fillStyle = "#38bdf8"; ctx.fillText("PLATFORM 1 [UP MAIN LINE]", 440, 82);
-            ctx.fillStyle = "#f43f5e"; ctx.fillText("PLATFORM 2 [DN MAIN LINE]", 440, 134);
-            ctx.fillStyle = "#38bdf8"; ctx.fillText("PLATFORM 3 [UP CHORD / BANGAON]", 440, 182);
-            ctx.fillStyle = "#f43f5e"; ctx.fillText("PLATFORM 4 [DN BANGAON / HASNABAD]", 440, 234);
-            ctx.fillStyle = "#f43f5e"; ctx.fillText("PLATFORM 5 [CIRCULAR RAIL]", 440, 282);
+            ctx.fillStyle = "#38bdf8"; ctx.fillText("PLATFORM 1 [UP MAIN LINE]", 600, 82);
+            ctx.fillStyle = "#f43f5e"; ctx.fillText("PLATFORM 2 [DN MAIN LINE]", 550, 134);
+            ctx.fillStyle = "#38bdf8"; ctx.fillText("PLATFORM 3 [UP CHORD / BANGAON]", 600, 182);
+            ctx.fillStyle = "#f43f5e"; ctx.fillText("PLATFORM 4 [DN BANGAON / HASNABAD]", 550, 234);
+            ctx.fillStyle = "#f43f5e"; ctx.fillText("PLATFORM 5 [CIRCULAR RAIL]", 550, 294);
 
-            // Draw Signal Configurations 
+            // 3. Render 3-Aspect Vertical Stack Signals
             SIGNALS_CONFIG.forEach(sig => {
                 let aspect = signalAspects[sig.id];
-                let color = (aspect === 'RED') ? '#dc2626' : (aspect === 'YELLOW' ? '#eab308' : '#22c55e');
-                let offset_y = 14 * sig.side;
+                let offset_y = 15 * sig.side;
+                let sx = sig.x;
+                let sy = sig.y + offset_y;
 
-                // Signal Housing Base
+                // Black multi-lens housing housing block
                 ctx.fillStyle = "#000000";
                 ctx.strokeStyle = "#475569";
-                ctx.lineWidth = 1;
-                ctx.fillRect(sig.x - 5, sig.y + offset_y - 5, 10, 10);
-                ctx.strokeRect(sig.x - 5, sig.y + offset_y - 5, 10, 10);
+                ctx.lineWidth = 1.5;
+                ctx.fillRect(sx - 5, sy - 9, 10, 18);
+                ctx.strokeRect(sx - 5, sy - 9, 10, 18);
 
-                // Lamp Aspect Circle
-                ctx.fillStyle = color;
-                ctx.beginPath();
-                ctx.arc(sig.x, sig.y + offset_y, 3, 0, 2 * Math.PI);
-                ctx.fill();
+                // Multi-lens state assignments (Top, Mid, Bottom aspect mapping)
+                let rColor = "#3f1a1a", yColor = "#3f361a", gColor = "#1a3f23";
+                if (aspect === 'RED') rColor = "#dc2626";
+                else if (aspect === 'YELLOW') yColor = "#eab308";
+                else if (aspect === 'GREEN') gColor = "#22c55e";
 
-                // Text Description
-                ctx.font = "bold 10px Courier New";
+                // Top (Red)
+                ctx.fillStyle = rColor; ctx.beginPath(); ctx.arc(sx, sy - 5, 2.2, 0, 2 * Math.PI); ctx.fill();
+                // Middle (Yellow)
+                ctx.fillStyle = yColor; ctx.beginPath(); ctx.arc(sx, sy, 2.2, 0, 2 * Math.PI); ctx.fill();
+                // Bottom (Green)
+                ctx.fillStyle = gColor; ctx.beginPath(); ctx.arc(sx, sy + 5, 2.2, 0, 2 * Math.PI); ctx.fill();
+
+                // Structural tag strings labels
+                ctx.font = "bold 9px Courier New";
                 ctx.fillStyle = "#64748b";
-                ctx.fillText(sig.lbl, sig.x, sig.y + (offset_y * 2.3));
+                ctx.fillText(sig.lbl, sx, sy + (sig.side * 16) + (sig.side === -1 ? 0 : 5));
             });
 
-            // Draw Moving Rolling Stock Consists
+            // 4. Render Active Trains Vector Bodies
             activeTrains.forEach(t => {
                 let pts = TRACK_GEOMETRY[t.route_path[t.current_idx]];
                 let pos = getVectorCoordinates(pts, t.progress);
@@ -414,8 +535,8 @@
 
         function systemLoop() {
             clockTicks++;
-            // Automatic random scheduling injector loop
-            if (clockTicks % 120 === 0) {
+            // Automated injection loop checks if AI active flag is set to true
+            if (aiAutomationEnabled && clockTicks % 130 === 0) {
                 let d = Math.random() > 0.5 ? 'UP' : 'DOWN';
                 let p = (d === 'UP') ? (Math.random() > 0.5 ? 'P1' : 'P3') : (Math.random() > 0.6 ? 'P2' : (Math.random() > 0.5 ? 'P4' : 'P5'));
                 injectTrain(d, p);
@@ -427,7 +548,6 @@
             requestAnimationFrame(systemLoop);
         }
 
-        // Start Web Simulation Runtime
         requestAnimationFrame(systemLoop);
     </script>
 </body>
